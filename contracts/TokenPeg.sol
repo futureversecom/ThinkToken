@@ -2,20 +2,24 @@
 pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 import "./IBridge.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
+import "./Roles.sol";
+import "./TokenRecovery.sol";
 
 /// @title ERC20 Peg contract on ethereum
 /// @author Root Network
 /// @notice Provides an Eth/ERC20/GA Root network peg
 ///  - depositing: lock Eth/ERC20 tokens to redeem Root network "generic asset" (GA) 1:1
 ///  - withdrawing: burn or lock GAs to redeem Eth/ERC20 tokens 1:1
-contract ERC20Peg is Ownable, IBridgeReceiver, ReentrancyGuard, ERC165 {
+contract TokenPeg is TokenRecovery, Ownable, IBridgeReceiver {
     using SafeERC20 for IERC20;
-    // Reserved address for native Eth deposits/withdraw
-    address public constant ETH_RESERVED_TOKEN_ADDRESS = address(0);
+
+    IERC20 public token; // token isn't updatable
 
     // whether the peg is accepting deposits
     bool public depositsActive;
@@ -32,6 +36,7 @@ contract ERC20Peg is Ownable, IBridgeReceiver, ReentrancyGuard, ERC165 {
     event BridgeAddressUpdated(address indexed bridge);
     event PalletAddressUpdated(address indexed palletAddress);
     event Endowed(uint256 indexed amount);
+
     event Deposit(
         address indexed _address,
         address indexed tokenAddress,
@@ -49,43 +54,41 @@ contract ERC20Peg is Ownable, IBridgeReceiver, ReentrancyGuard, ERC165 {
         uint128 indexed amount
     );
 
-    constructor(IBridge _bridge) {
+    constructor(
+        IBridge _bridge,
+        IERC20 _token, // Changed from ERC20 to IERC20
+        address _rolesManager,
+        address _tokenRecoveryManager,
+        address _pegManager
+    ) TokenRecovery(_tokenRecoveryManager) {
         bridge = _bridge;
+        token = _token;
+        _grantRole(DEFAULT_ADMIN_ROLE, _rolesManager);
+        _grantRole(PEG_MANAGER_ROLE, _pegManager);
     }
 
-    /// @notice Deposit amount of tokenAddress the pegged version of the token will be claim-able on Root network.
-    /// @dev `tokenAddress` `0` is reserved for native Eth
     function deposit(
-        address _tokenAddress,
+        address _tokenAddress, // ? 2Marco: do we need this?
         uint128 _amount,
         address _destination
     ) external payable {
-        require(depositsActive, "ERC20Peg: deposits paused");
+        require(depositsActive, "TP: Deposits paused");
 
         uint256 bridgeMessageFee = msg.value;
 
-        if (_tokenAddress == ETH_RESERVED_TOKEN_ADDRESS) {
-            require(
-                msg.value >= (_amount + bridge.sendMessageFee()),
-                "ERC20Peg: incorrect deposit amount (requires deposit fee)"
-            );
-            bridgeMessageFee = bridgeMessageFee - _amount; // extract bridge fee from deposit amount
-        } else {
-            require(
-                msg.value >= bridge.sendMessageFee(),
-                "ERC20Peg: incorrect token address (requires deposit fee)"
-            );
-            IERC20(_tokenAddress).safeTransferFrom(
-                msg.sender,
-                address(this),
-                _amount
-            );
-        }
+        require(
+            msg.value >= bridge.sendMessageFee(),
+            "TP: Should include a fee"
+        );
+        IERC20(token).safeTransferFrom(msg.sender, address(this), _amount);
 
-        emit Deposit(msg.sender, _tokenAddress, _amount, _destination);
+        emit Deposit(msg.sender, address(token), _amount, _destination);
 
-        // send message to bridge - with fee to feeRecipient via bridge
-        bytes memory message = abi.encode(_tokenAddress, _amount, _destination);
+        bytes memory message = abi.encode(
+            address(token),
+            _amount,
+            _destination
+        );
 
         bridge.sendMessage{value: bridgeMessageFee}(palletAddress, message);
     }
@@ -95,41 +98,30 @@ contract ERC20Peg is Ownable, IBridgeReceiver, ReentrancyGuard, ERC165 {
         bytes calldata _message
     ) external override {
         // only accept calls from the bridge contract
-        require(
-            msg.sender == address(bridge),
-            "ERC20Peg: only bridge can call"
-        );
+        require(msg.sender == address(bridge), "TP: Only bridge can call");
         // only accept messages from the peg pallet
-        require(
-            _source == palletAddress,
-            "ERC20Peg: source must be peg pallet address"
-        );
+        require(_source == palletAddress, "TP: must be peg pallet address");
 
         (address tokenAddress, uint128 amount, address recipient) = abi.decode(
             _message,
             (address, uint128, address)
         );
+
+        require(tokenAddress == address(token), "TP: token not allowed");
+
         _withdraw(tokenAddress, amount, recipient);
     }
 
-    /// @notice Withdraw tokens from this contract
-    /// tokenAddress '0' is reserved for native Eth
-    /// Requires signatures from a threshold of current Root network validators.
     function _withdraw(
-        address _tokenAddress,
+        address _tokenAddress, // ? 2Marco: do we need this?
         uint128 _amount,
         address _recipient
     ) internal nonReentrant {
-        require(withdrawalsActive, "ERC20Peg: withdrawals paused");
+        require(withdrawalsActive, "TP: Withdrawals paused");
 
-        if (_tokenAddress == ETH_RESERVED_TOKEN_ADDRESS) {
-            (bool sent, ) = _recipient.call{value: _amount}("");
-            require(sent, "ERC20Peg: failed to send Ether");
-        } else {
-            SafeERC20.safeTransfer(IERC20(_tokenAddress), _recipient, _amount);
-        }
+        IERC20(token).safeTransfer(_recipient, _amount);
 
-        emit Withdraw(_recipient, _tokenAddress, _amount);
+        emit Withdraw(_recipient, address(token), _amount);
     }
 
     /// @dev See {IERC165-supportsInterface}. Docs: https://docs.openzeppelin.com/contracts/4.x/api/utils#IERC165
@@ -146,27 +138,36 @@ contract ERC20Peg is Ownable, IBridgeReceiver, ReentrancyGuard, ERC165 {
     // ============================================================================================================= //
 
     /// @dev Endow the contract with ether
-    function endow() external payable onlyOwner {
-        require(msg.value > 0, "ERC20Peg: must endow nonzero");
+    // ? 2Marco: do we need this?
+    function endow() external payable onlyRole(PEG_MANAGER_ROLE) {
+        require(msg.value > 0, "TP: Must endow nonzero");
         emit Endowed(msg.value);
     }
 
-    function setDepositsActive(bool _active) external onlyOwner {
+    function setDepositsActive(
+        bool _active
+    ) external onlyRole(PEG_MANAGER_ROLE) {
         depositsActive = _active;
         emit DepositActiveStatus(_active);
     }
 
-    function setWithdrawalsActive(bool _active) external onlyOwner {
+    function setWithdrawalsActive(
+        bool _active
+    ) external onlyRole(PEG_MANAGER_ROLE) {
         withdrawalsActive = _active;
         emit WithdrawalActiveStatus(_active);
     }
 
-    function setBridgeAddress(IBridge _bridge) external onlyOwner {
+    function setBridgeAddress(
+        IBridge _bridge
+    ) external onlyRole(PEG_MANAGER_ROLE) {
         bridge = _bridge;
         emit BridgeAddressUpdated(address(_bridge));
     }
 
-    function setPalletAddress(address _palletAddress) external onlyOwner {
+    function setPalletAddress(
+        address _palletAddress
+    ) external onlyRole(PEG_MANAGER_ROLE) {
         palletAddress = _palletAddress;
         emit PalletAddressUpdated(_palletAddress);
     }
@@ -175,7 +176,7 @@ contract ERC20Peg is Ownable, IBridgeReceiver, ReentrancyGuard, ERC165 {
         address _tokenAddress,
         uint128 _amount,
         address _recipient
-    ) external onlyOwner {
+    ) external onlyRole(PEG_MANAGER_ROLE) {
         _withdraw(_tokenAddress, _amount, _recipient);
         emit AdminWithdraw(_recipient, _tokenAddress, _amount);
     }

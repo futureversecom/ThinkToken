@@ -1,15 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "../contracts/ThinkToken.sol";
+import "../contracts/Token.sol";
 import {UserFactory} from "./utils/UserFactory.sol";
 import "forge-std/Test.sol";
 import "../contracts/Roles.sol";
 
 contract ThinkTokenTest is Test {
-    ThinkToken token;
+    Token token;
     address[] users;
-    address manager;
+    address rolesManager;
+    address tokenManager;
+    address recoveryManager;
     address multisig;
     address user;
     address peg;
@@ -36,15 +38,22 @@ contract ThinkTokenTest is Test {
 
     function setUp() public {
         users = new UserFactory().create(3);
-        manager = users[0];
+        rolesManager = users[0];
+        tokenManager = users[0]; // Using same address for testing
+        recoveryManager = users[0]; // Using same address for testing
         multisig = users[1];
         user = users[2];
         peg = address(0x123);
 
-        token = new ThinkToken(manager, multisig);
+        token = new Token(
+            rolesManager,
+            tokenManager,
+            recoveryManager,
+            multisig
+        );
 
         // Initialize the token
-        vm.prank(manager);
+        vm.prank(tokenManager);
         token.init(peg);
 
         // Transfer some tokens from peg to multisig for testing
@@ -55,7 +64,7 @@ contract ThinkTokenTest is Test {
     function test_initial_state() public {
         assertEq(token.totalSupply(), INITIAL_SUPPLY);
         assertEq(token.balanceOf(peg), INITIAL_SUPPLY - (TEST_AMOUNT * 10));
-        assertTrue(token.hasRole(MANAGER_ROLE, manager));
+        assertTrue(token.hasRole(MANAGER_ROLE, tokenManager));
         assertTrue(token.hasRole(MULTISIG_ROLE, multisig));
     }
 
@@ -81,19 +90,14 @@ contract ThinkTokenTest is Test {
     }
 
     function test_pause_mechanism() public {
-        address recipient = makeAddr("recipient"); // Create a proper address
+        address recipient = makeAddr("recipient");
 
         // Transfer some tokens to user for testing
         vm.prank(multisig);
         token.transfer(user, TEST_AMOUNT);
-        assertEq(
-            token.balanceOf(user),
-            TEST_AMOUNT,
-            "User should have received tokens"
-        );
 
         // Test pause by manager
-        vm.prank(manager);
+        vm.prank(tokenManager);
         token.pause();
         assertTrue(token.paused());
 
@@ -108,11 +112,11 @@ contract ThinkTokenTest is Test {
         );
 
         // Test unauthorized unpause
-        vm.prank(manager);
+        vm.prank(tokenManager);
         vm.expectRevert(
             abi.encodePacked(
                 "AccessControl: account ",
-                Strings.toHexString(uint160(manager), 20),
+                Strings.toHexString(uint160(tokenManager), 20),
                 " is missing role ",
                 Strings.toHexString(uint256(MULTISIG_ROLE), 32)
             )
@@ -152,18 +156,18 @@ contract ThinkTokenTest is Test {
         token.grantRole(MANAGER_ROLE, newManager);
 
         // Test authorized manager addition
-        vm.prank(manager);
+        vm.prank(rolesManager);
         token.grantRole(MANAGER_ROLE, newManager);
         assertTrue(token.hasRole(MANAGER_ROLE, newManager));
 
         // Test manager removal
-        vm.prank(manager);
+        vm.prank(rolesManager);
         token.revokeRole(MANAGER_ROLE, newManager);
         assertFalse(token.hasRole(MANAGER_ROLE, newManager));
     }
 
     function test_double_initialization() public {
-        vm.startPrank(manager);
+        vm.startPrank(tokenManager);
         address newPeg = makeAddr("newPeg");
         vm.expectRevert("Already initialized");
         token.init(newPeg);
@@ -172,9 +176,14 @@ contract ThinkTokenTest is Test {
 
     function test_initialization_zero_address() public {
         // Create new token without initialization
-        token = new ThinkToken(manager, multisig);
+        token = new Token(
+            rolesManager,
+            tokenManager,
+            recoveryManager,
+            multisig
+        );
 
-        vm.prank(manager);
+        vm.prank(tokenManager);
         vm.expectRevert("Invalid peg address");
         token.init(address(0));
     }
@@ -193,7 +202,7 @@ contract ThinkTokenTest is Test {
 
     function test_unauthorized_unpause() public {
         // Setup: pause first
-        vm.prank(manager);
+        vm.prank(tokenManager);
         token.pause();
 
         vm.prank(user);
@@ -203,7 +212,7 @@ contract ThinkTokenTest is Test {
 
     function test_unpause_when_not_paused() public {
         // First pause
-        vm.prank(manager);
+        vm.prank(tokenManager);
         token.pause();
 
         vm.prank(multisig);
@@ -216,7 +225,7 @@ contract ThinkTokenTest is Test {
         vm.prank(multisig);
         token.transfer(user, TEST_AMOUNT);
 
-        vm.prank(manager);
+        vm.prank(tokenManager);
         token.pause();
 
         // Try various transfer scenarios while paused

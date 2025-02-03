@@ -14,17 +14,23 @@ string constant NAME = "THINK Token";
 string constant SYMBOL = "THINK";
 
 /**
- * @dev Futureverse ERC20 THINK token
+ * @dev Futureverse ERC20 token
  */
-contract ThinkToken is TokenRecovery, ERC20Capped, Pausable {
+contract Token is TokenRecovery, ERC20Capped, Pausable {
     bool private _initialized;
 
     constructor(
-        address manager,
+        address rolesManager,
+        address tokenContractManager,
+        address tokenRecoveryManager,
         address multisig
-    ) ERC20Capped(TOTAL_SUPPLY) ERC20(NAME, SYMBOL) TokenRecovery(manager) {
-        _grantRole(DEFAULT_ADMIN_ROLE, manager);
-        _grantRole(MANAGER_ROLE, manager);
+    )
+        ERC20Capped(TOTAL_SUPPLY)
+        ERC20(NAME, SYMBOL)
+        TokenRecovery(tokenRecoveryManager)
+    {
+        _grantRole(DEFAULT_ADMIN_ROLE, rolesManager);
+        _grantRole(MANAGER_ROLE, tokenContractManager);
         _grantRole(MULTISIG_ROLE, multisig);
     }
 
