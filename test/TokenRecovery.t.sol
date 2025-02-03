@@ -186,7 +186,7 @@ contract TokenRecoveryTest is Test {
 
     function test_receive_function() public {
         vm.deal(address(this), 1 ether);
-        vm.expectRevert("");
+        vm.expectRevert(); // Empty revert without message
         payable(address(recovery)).transfer(1 ether);
     }
 }
