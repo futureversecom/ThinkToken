@@ -10,6 +10,12 @@ import "../contracts/Roles.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
 contract MockToken is TokenRecovery {
+    bool public simulateTransferFailure = false;
+
+    function setSimulateTransferFailure(bool _fail) external {
+        simulateTransferFailure = _fail;
+    }
+
     constructor(
         address tokenRecoveryManager
     ) TokenRecovery(tokenRecoveryManager) {}
@@ -19,6 +25,9 @@ contract MockToken is TokenRecovery {
     }
 
     function transfer(address to, uint256 amount) external returns (bool) {
+        if (simulateTransferFailure) {
+            revert("ERC20 transfer failed");
+        }
         return true;
     }
 }
@@ -112,13 +121,7 @@ contract TokenRecoveryTest is Test {
 
         uint256 expectedRefund = depositAmount - ((depositAmount * 10) / 100);
 
-        // Mock ERC20 transfer
-        vm.mockCall(
-            address(recovery),
-            abi.encodeWithSelector(IERC20.transfer.selector),
-            abi.encode(true)
-        );
-
+        // Withdraw refund – this will use the token's real withdrawal logic.
         vm.expectEmit(true, true, false, true);
         emit WithdrawnForFee(user, expectedRefund, 10);
 
@@ -140,13 +143,7 @@ contract TokenRecoveryTest is Test {
         vm.prank(user);
         recovery.deposit(address(recovery), depositAmount);
 
-        // Mock ERC20 transfer
-        vm.mockCall(
-            address(recovery),
-            abi.encodeWithSelector(IERC20.transfer.selector),
-            abi.encode(true)
-        );
-
+        // Withdraw fees – expect the WithdrawnForFee event with fee percentage appended
         vm.expectEmit(true, true, false, true);
         emit AdminWithdrawal(manager, expectedFee);
 
@@ -262,15 +259,8 @@ contract TokenRecoveryTest is Test {
         );
 
         // Reset state for next test
-        vm.mockCall(
-            address(recovery),
-            abi.encodeWithSelector(IERC20.transfer.selector),
-            abi.encode(true)
-        );
         vm.prank(user);
         recovery.withdraw();
-        // Clear the mock to avoid interference
-        vm.clearMockedCalls();
 
         // Test 100% fee
         vm.prank(manager);
@@ -295,12 +285,10 @@ contract TokenRecoveryTest is Test {
             "All funds should go to fees with 100% fee"
         );
 
-        // Mock transfer for admin withdrawal
-        vm.mockCall(
-            address(recovery),
-            abi.encodeWithSelector(IERC20.transfer.selector),
-            abi.encode(true)
-        );
+        // Withdraw fees – expect the WithdrawnForFee event with fee percentage appended
+        vm.expectEmit(true, true, false, true);
+        emit AdminWithdrawal(manager, DEPOSIT_AMOUNT);
+
         vm.prank(manager);
         recovery.adminFeesWithdrawal(manager);
 
@@ -317,22 +305,19 @@ contract TokenRecoveryTest is Test {
         vm.prank(user);
         recovery.deposit(address(recovery), 1000);
 
-        // Mock failed transfer
-        vm.mockCall(
-            address(recovery),
-            abi.encodeWithSelector(IERC20.transfer.selector),
-            abi.encode(false)
-        );
+        // Simulate failed transfer by setting the flag to true
+        vm.prank(manager);
+        recovery.setSimulateTransferFailure(true);
 
-        // Attempt withdrawal
+        // Attempt withdrawal - should revert with "ERC20 transfer failed"
         vm.prank(user);
         vm.expectRevert("ERC20 transfer failed");
         recovery.withdraw();
 
-        // Verify state wasn't changed
+        // Verify state wasn't changed (refund remains 900, deposit minus 10% fee)
         assertEq(
             recovery.refunds(user),
-            900, // Original deposit minus 10% fee
+            900,
             "Refund should remain unchanged after failed transfer"
         );
     }
@@ -344,13 +329,6 @@ contract TokenRecoveryTest is Test {
 
         vm.prank(user);
         recovery.deposit(address(recovery), depositAmount);
-
-        // Mock ERC20 transfer for both withdrawals
-        vm.mockCall(
-            address(recovery),
-            abi.encodeWithSelector(IERC20.transfer.selector),
-            abi.encode(true)
-        );
 
         // First withdrawal
         vm.expectEmit(true, true, false, true);

@@ -261,14 +261,7 @@ contract ThinkTokenTest is Test {
         // Verify deposit was processed
         assertEq(token.refunds(multisig), refund, "Refund amount incorrect");
 
-        // Mock ERC20 transfer for withdrawal
-        vm.mockCall(
-            address(token),
-            abi.encodeWithSelector(IERC20.transfer.selector),
-            abi.encode(true)
-        );
-
-        // Withdraw refund
+        // Rely on the actual ERC20 transfer implementation for withdrawal.
         vm.expectEmit(true, true, false, true, address(token));
         emit WithdrawnForFee(multisig, refund, 10);
         token.withdraw();

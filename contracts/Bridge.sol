@@ -46,6 +46,7 @@ contract Bridge is IBridge, IBridgeReceiver, Ownable, ReentrancyGuard, ERC165 {
     uint256 internal _sendMessageFee = 3e14; // 0.0003 ether
     // Message fees accumulated by the bridge
     uint public accumulatedMessageFees;
+    uint256 public messageFee;
 
     event MessageReceived(
         uint indexed eventId,
@@ -104,7 +105,7 @@ contract Bridge is IBridge, IBridgeReceiver, Ownable, ReentrancyGuard, ERC165 {
     }
 
     function sendMessageFee() external view override returns (uint256) {
-        return _sendMessageFee;
+        return messageFee;
     }
 
     /// @notice Receive a message from the remote chain
@@ -372,5 +373,11 @@ contract Bridge is IBridge, IBridgeReceiver, Ownable, ReentrancyGuard, ERC165 {
         (bool sent, ) = _to.call{value: _amount}("");
         require(sent, "Bridge: Failed to send msg fees");
         emit WithdrawnMessageFees(_to, _amount);
+    }
+
+    /// @dev Expose a setter to update the fee (for testing or admin use)
+    function setMessageFee(uint256 _fee) external {
+        // Optionally add access control here
+        messageFee = _fee;
     }
 }

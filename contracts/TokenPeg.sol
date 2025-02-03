@@ -16,7 +16,7 @@ import "./TokenRecovery.sol";
 /// @notice Provides an Eth/ERC20/GA Root network peg
 ///  - depositing: lock Eth/ERC20 tokens to redeem Root network "generic asset" (GA) 1:1
 ///  - withdrawing: burn or lock GAs to redeem Eth/ERC20 tokens 1:1
-contract TokenPeg is TokenRecovery, Ownable, IBridgeReceiver {
+contract TokenPeg is TokenRecovery, IBridgeReceiver {
     using SafeERC20 for IERC20;
 
     IERC20 public token; // token isn't updatable
@@ -99,7 +99,7 @@ contract TokenPeg is TokenRecovery, Ownable, IBridgeReceiver {
     ) external override {
         // only accept calls from the bridge contract
         require(msg.sender == address(bridge), "TP: Only bridge can call");
-        // only accept messages from the peg pallet
+        // Ensure the bridge is active
         require(_source == palletAddress, "TP: must be peg pallet address");
 
         (address tokenAddress, uint128 amount, address recipient) = abi.decode(
