@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.20;
 
-import "../contracts/ThinkTokenPeg.sol";
 import "../contracts/ThinkToken.sol";
+import "../contracts/ThinkTokenPeg.sol";
 import "../contracts/Bridge.sol";
 import "../contracts/IBridge.sol";
 
@@ -13,30 +13,30 @@ import "forge-std/Script.sol";
 contract Locally is Script {
     function run() external {
         uint256 pk = vm.envUint("LOCAL_PK");
-
         address manager = vm.envAddress("DEV_MANAGER");
-        address multisig = vm.envAddress("DEV_MANAGER"); // For testing they are the same
+        address multisig = vm.envAddress("DEV_MULTISIG");
+        address peg = vm.envAddress("DEV_PEG");
+
         console.log("Manager address: %s", manager);
         console.log("Multisig address: %s", multisig);
+        console.log("Peg address: %s", peg);
 
         vm.startBroadcast(pk);
 
-        Bridge bridge_ = new Bridge();
-        ThinkToken rt_ = new ThinkToken(manager, multisig);
-        ThinkTokenPeg peg_ = new ThinkTokenPeg(IBridge(bridge_), address(rt_));
+        // Deploy ThinkToken
+        ThinkToken token = new ThinkToken(manager, multisig);
+        console.log("ThinkToken deployed to: %s", address(token));
 
-        bridge_.setActive(true);
-        peg_.setDepositsActive(true);
-
+        // Initialize with peg address
         vm.stopBroadcast();
-
         vm.startBroadcast(manager);
-        rt_.init(address(peg_));
+        token.init(peg);
         vm.stopBroadcast();
 
-        console.log("Bridge address: %s", address(bridge_));
-        console.log("ThinkTokenPeg address: %s", address(peg_));
-        console.log("ThinkToken address: %s", address(rt_));
+        console.log("Deployment complete");
+        console.log("Token initialized with peg: %s", peg);
+        console.log("Manager role granted to: %s", manager);
+        console.log("Multisig role granted to: %s", multisig);
     }
 }
 
@@ -46,28 +46,67 @@ contract Testnet is Script {
         uint256 manager_pk = vm.envUint("DEV_MANAGER_PK");
 
         address manager = vm.envAddress("DEV_MANAGER");
-        address multisig = vm.envAddress("DEV_MANAGER"); // For testing they are the same
+        address multisig = vm.envAddress("DEV_MULTISIG");
+        address peg = vm.envAddress("DEV_PEG");
+
         console.log("Manager address: %s", manager);
         console.log("Multisig address: %s", multisig);
+        console.log("Peg address: %s", peg);
 
         vm.startBroadcast(pk);
 
-        Bridge bridge_ = new Bridge();
-        ThinkToken rt_ = new ThinkToken(manager, multisig);
-        ThinkTokenPeg peg_ = new ThinkTokenPeg(IBridge(bridge_), address(rt_));
-
-        bridge_.setActive(true);
-        peg_.setDepositsActive(true);
+        // Deploy ThinkToken
+        ThinkToken token = new ThinkToken(manager, multisig);
+        console.log("ThinkToken deployed to: %s", address(token));
 
         vm.stopBroadcast();
 
+        // Initialize with peg address using manager account
         vm.startBroadcast(manager_pk);
-        rt_.init(address(peg_));
+        token.init(peg);
         vm.stopBroadcast();
 
-        console.log("Bridge address: %s", address(bridge_));
-        console.log("ThinkTokenPeg address: %s", address(peg_));
-        console.log("ThinkToken address: %s", address(rt_));
+        console.log("Deployment complete");
+        console.log("Token initialized with peg: %s", peg);
+        console.log("Manager role granted to: %s", manager);
+        console.log("Multisig role granted to: %s", multisig);
+    }
+}
+
+contract Production is Script {
+    function run() external {
+        uint256 pk = vm.envUint("PROD_PK");
+        uint256 manager_pk = vm.envUint("PROD_MANAGER_PK");
+
+        address manager = vm.envAddress("PROD_MANAGER");
+        address multisig = vm.envAddress("PROD_MULTISIG");
+        address peg = vm.envAddress("PROD_PEG");
+
+        require(manager != address(0), "Invalid manager address");
+        require(multisig != address(0), "Invalid multisig address");
+        require(peg != address(0), "Invalid peg address");
+
+        console.log("Manager address: %s", manager);
+        console.log("Multisig address: %s", multisig);
+        console.log("Peg address: %s", peg);
+
+        vm.startBroadcast(pk);
+
+        // Deploy ThinkToken
+        ThinkToken token = new ThinkToken(manager, multisig);
+        console.log("ThinkToken deployed to: %s", address(token));
+
+        vm.stopBroadcast();
+
+        // Initialize with peg address using manager account
+        vm.startBroadcast(manager_pk);
+        token.init(peg);
+        vm.stopBroadcast();
+
+        console.log("Deployment complete");
+        console.log("Token initialized with peg: %s", peg);
+        console.log("Manager role granted to: %s", manager);
+        console.log("Multisig role granted to: %s", multisig);
     }
 }
 

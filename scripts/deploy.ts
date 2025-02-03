@@ -1,32 +1,62 @@
 import { ethers } from "hardhat";
 
 async function main() {
-  // deploy bridge contract
-  const BridgeFactory = await ethers.getContractFactory('Bridge');
-  const bridge = await BridgeFactory.deploy();
-  await bridge.deployed();
-  console.log(`Bridge deployed to ${bridge.address}`);
+  // Get deployer and other accounts
+  const [deployer] = await ethers.getSigners();
 
-  // deploy erc20Peg contract
-  const ERC20PegFactory = await ethers.getContractFactory('ERC20Peg');
-  const erc20Peg = await ERC20PegFactory.deploy(bridge.address);
-  await erc20Peg.deployed();
-  console.log(`ERC20Peg deployed to ${erc20Peg.address}`);
+  // Get addresses from env
+  const manager = process.env.MANAGER_ADDRESS;
+  const multisig = process.env.MULTISIG_ADDRESS;
+  const peg = process.env.PEG_ADDRESS;
 
-  // deploy mock erc20 token
-  const MockERC20Factory = await ethers.getContractFactory('MockERC20');
-  const mockERC20 = await MockERC20Factory.deploy('Test Token', 'TEST', 1_000_000);
+  if (!manager || !multisig || !peg) {
+    throw new Error("Missing required environment variables");
+  }
 
-  // make deposit to erc20 peg contract
-  const depositAmount = 5644;
-  await mockERC20.approve(erc20Peg.address, depositAmount)
-  const rootAddress = "0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d"; // TODO - invalid address
-  const tx = await erc20Peg.deposit(mockERC20.address, depositAmount, rootAddress);
-  await tx.wait();
+  console.log("Deploying contracts with the account:", deployer.address);
+  console.log("Manager address:", manager);
+  console.log("Multisig address:", multisig);
+  console.log("Peg address:", peg);
+
+  // Deploy ThinkToken
+  const ThinkToken = await ethers.getContractFactory("ThinkToken");
+  const token = await ThinkToken.deploy(manager, multisig);
+  await token.deployed();
+  console.log("ThinkToken deployed to:", token.address);
+
+  // Initialize token with peg address
+  // Note: This needs to be called by the manager account
+  const managerSigner = await ethers.getSigner(manager);
+  await token.connect(managerSigner).init(peg);
+  console.log("Token initialized with peg:", peg);
+
+  // Verify roles
+  const hasManagerRole = await token.hasRole(
+    ethers.utils.keccak256(ethers.utils.toUtf8Bytes("MANAGER_ROLE")),
+    manager
+  );
+  const hasMultisigRole = await token.hasRole(
+    ethers.utils.keccak256(ethers.utils.toUtf8Bytes("MULTISIG_ROLE")),
+    multisig
+  );
+
+  console.log("Role verification:");
+  console.log("- Manager role granted:", hasManagerRole);
+  console.log("- Multisig role granted:", hasMultisigRole);
+
+  // Log deployment info for verification
+  console.log("\nDeployment Info for Verification:");
+  console.log(
+    "npx hardhat verify --network <network>",
+    token.address,
+    manager,
+    multisig
+  );
 }
 
 main()
+  .then(() => process.exit(0))
   .catch((error) => {
     console.error(error);
-    process.exitCode = 1;
+    process.exit(1);
   });
