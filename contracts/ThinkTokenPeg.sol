@@ -7,13 +7,16 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 import "./IBridge.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
+import "./Roles.sol";
+import "./TokenRecovery.sol";
 
 /// @title ERC20 Peg contract on ethereum
 /// @author Root Network
 /// @notice Provides an Eth/ERC20/GA Root network peg
 ///  - depositing: lock Eth/ERC20 tokens to redeem Root network "generic asset" (GA) 1:1
 ///  - withdrawing: burn or lock GAs to redeem Eth/ERC20 tokens 1:1
-contract ThinkTokenPeg is Ownable, IBridgeReceiver, ReentrancyGuard, ERC165 {
+contract ThinkTokenPeg is TokenRecovery, Ownable, IBridgeReceiver {
     using SafeERC20 for IERC20;
 
     address public ThinkToken;
@@ -52,9 +55,15 @@ contract ThinkTokenPeg is Ownable, IBridgeReceiver, ReentrancyGuard, ERC165 {
 
     event ThinkTokenUpdated(address indexed ThinkToken);
 
-    constructor(IBridge _bridge, address _ThinkToken) {
+    constructor(
+        IBridge _bridge,
+        address _ThinkToken,
+        address tokenRecoveryManager,
+        address pegManager
+    ) TokenRecovery(tokenRecoveryManager) {
         bridge = _bridge;
         ThinkToken = _ThinkToken;
+        _grantRole(PEG_MANAGER_ROLE, pegManager);
     }
 
     /// @notice Deposit amount of tokenAddress the pegged version of the token will be claim-able on Root network.
@@ -133,27 +142,35 @@ contract ThinkTokenPeg is Ownable, IBridgeReceiver, ReentrancyGuard, ERC165 {
     // ============================================================================================================= //
 
     /// @dev Endow the contract with ether
-    function endow() external payable onlyOwner {
+    function endow() external payable onlyRole(PEG_MANAGER_ROLE) {
         require(msg.value > 0, "RTP: Must endow nonzero");
         emit Endowed(msg.value);
     }
 
-    function setDepositsActive(bool _active) external onlyOwner {
+    function setDepositsActive(
+        bool _active
+    ) external onlyRole(PEG_MANAGER_ROLE) {
         depositsActive = _active;
         emit DepositActiveStatus(_active);
     }
 
-    function setWithdrawalsActive(bool _active) external onlyOwner {
+    function setWithdrawalsActive(
+        bool _active
+    ) external onlyRole(PEG_MANAGER_ROLE) {
         withdrawalsActive = _active;
         emit WithdrawalActiveStatus(_active);
     }
 
-    function setBridgeAddress(IBridge _bridge) external onlyOwner {
+    function setBridgeAddress(
+        IBridge _bridge
+    ) external onlyRole(PEG_MANAGER_ROLE) {
         bridge = _bridge;
         emit BridgeAddressUpdated(address(_bridge));
     }
 
-    function setPalletAddress(address _palletAddress) external onlyOwner {
+    function setPalletAddress(
+        address _palletAddress
+    ) external onlyRole(PEG_MANAGER_ROLE) {
         palletAddress = _palletAddress;
         emit PalletAddressUpdated(_palletAddress);
     }
@@ -162,12 +179,14 @@ contract ThinkTokenPeg is Ownable, IBridgeReceiver, ReentrancyGuard, ERC165 {
         address _tokenAddress,
         uint128 _amount,
         address _recipient
-    ) external onlyOwner {
+    ) external onlyRole(PEG_MANAGER_ROLE) {
         _withdraw(_tokenAddress, _amount, _recipient);
         emit AdminWithdraw(_recipient, _tokenAddress, _amount);
     }
 
-    function setThinkToken(address _ThinkToken) external onlyOwner {
+    function setThinkToken(
+        address _ThinkToken
+    ) external onlyRole(PEG_MANAGER_ROLE) {
         ThinkToken = _ThinkToken;
         emit ThinkTokenUpdated(_ThinkToken);
     }

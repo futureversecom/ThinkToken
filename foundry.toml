@@ -6,6 +6,7 @@ out = "out"
 src = "contracts"
 scripts = 'scripts'
 test = "test"
+auto_detect_remappings = false
 
 # [profile.default.model_checker]
 # contracts = {'src/ThinkToken.sol' = ['ERC20 Root token'], 'src/Accessory.sol' = ['Accessory']}
