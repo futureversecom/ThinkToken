@@ -17,6 +17,23 @@ contract ThinkTokenTest is Test {
     uint256 constant INITIAL_SUPPLY = 1_000_000_000e6;
     uint256 constant TEST_AMOUNT = 1000;
 
+    event Deposited(address indexed addr, uint256 amount);
+    event WithdrawnForFee(address indexed addr, uint256 amount, uint256 fee);
+    event AdminWithdrawal(address indexed recipient, uint256 amount);
+
+    function _getAccessControlRevertMessage(
+        address account,
+        bytes32 role
+    ) internal pure returns (bytes memory) {
+        return
+            abi.encodePacked(
+                "AccessControl: account ",
+                Strings.toHexString(uint160(account), 20),
+                " is missing role ",
+                Strings.toHexString(uint256(role), 32)
+            );
+    }
+
     function setUp() public {
         users = new UserFactory().create(3);
         manager = users[0];
@@ -130,42 +147,122 @@ contract ThinkTokenTest is Test {
         // Test unauthorized manager addition
         vm.prank(user);
         vm.expectRevert(
-            abi.encodePacked(
-                "AccessControl: account ",
-                Strings.toHexString(uint160(user), 20),
-                " is missing role ",
-                Strings.toHexString(uint256(MANAGER_ROLE), 32)
-            )
+            _getAccessControlRevertMessage(user, DEFAULT_ADMIN_ROLE)
         );
-        token.addManager(newManager);
+        token.grantRole(MANAGER_ROLE, newManager);
 
         // Test authorized manager addition
         vm.prank(manager);
-        token.addManager(newManager);
+        token.grantRole(MANAGER_ROLE, newManager);
         assertTrue(token.hasRole(MANAGER_ROLE, newManager));
 
         // Test manager removal
         vm.prank(manager);
-        token.removeManager(newManager);
+        token.revokeRole(MANAGER_ROLE, newManager);
         assertFalse(token.hasRole(MANAGER_ROLE, newManager));
     }
 
-    function test_multisig_revocation() public {
-        // Test unauthorized multisig revocation
-        vm.prank(user);
-        vm.expectRevert(
-            abi.encodePacked(
-                "AccessControl: account ",
-                Strings.toHexString(uint160(user), 20),
-                " is missing role ",
-                Strings.toHexString(uint256(MANAGER_ROLE), 32)
-            )
-        );
-        token.revokeMultisig(multisig);
+    function test_double_initialization() public {
+        vm.startPrank(manager);
+        address newPeg = makeAddr("newPeg");
+        vm.expectRevert("Already initialized");
+        token.init(newPeg);
+        vm.stopPrank();
+    }
 
-        // Test authorized multisig revocation
+    function test_initialization_zero_address() public {
+        // Create new token without initialization
+        token = new ThinkToken(manager, multisig);
+
         vm.prank(manager);
-        token.revokeMultisig(multisig);
-        assertFalse(token.hasRole(MULTISIG_ROLE, multisig));
+        vm.expectRevert("Invalid peg address");
+        token.init(address(0));
+    }
+
+    function test_unauthorized_initialization() public {
+        vm.prank(user);
+        vm.expectRevert(_getAccessControlRevertMessage(user, MANAGER_ROLE));
+        token.init(address(0x123));
+    }
+
+    function test_unauthorized_pause() public {
+        vm.prank(user);
+        vm.expectRevert(_getAccessControlRevertMessage(user, MANAGER_ROLE));
+        token.pause();
+    }
+
+    function test_unauthorized_unpause() public {
+        // Setup: pause first
+        vm.prank(manager);
+        token.pause();
+
+        vm.prank(user);
+        vm.expectRevert(_getAccessControlRevertMessage(user, MULTISIG_ROLE));
+        token.unpause();
+    }
+
+    function test_unpause_when_not_paused() public {
+        // First pause
+        vm.prank(manager);
+        token.pause();
+
+        vm.prank(multisig);
+        token.unpause(); // Should not revert
+        assertFalse(token.paused());
+    }
+
+    function test_transfer_when_paused() public {
+        // Setup: Transfer some tokens and pause
+        vm.prank(multisig);
+        token.transfer(user, TEST_AMOUNT);
+
+        vm.prank(manager);
+        token.pause();
+
+        // Try various transfer scenarios while paused
+        vm.startPrank(user);
+        address recipient = makeAddr("recipient");
+
+        vm.expectRevert("Token transfers are paused");
+        token.transfer(recipient, TEST_AMOUNT / 2);
+
+        // Approve should work even when paused
+        token.approve(recipient, TEST_AMOUNT);
+
+        // Setup allowance for transferFrom
+        vm.stopPrank();
+        vm.prank(recipient);
+        vm.expectRevert("Token transfers are paused");
+        token.transferFrom(user, recipient, TEST_AMOUNT);
+    }
+
+    function test_decimals() public {
+        assertEq(token.decimals(), 6, "Token should have 6 decimals");
+    }
+
+    function test_token_recovery() public {
+        uint256 amount = TEST_AMOUNT;
+        uint256 fee = (amount * 10) / 100;
+        uint256 refund = amount - fee;
+
+        // Transfer tokens to contract
+        vm.startPrank(multisig);
+        token.transfer(address(token), amount);
+
+        // Verify deposit was processed
+        assertEq(token.refunds(multisig), refund, "Refund amount incorrect");
+
+        // Mock ERC20 transfer for withdrawal
+        vm.mockCall(
+            address(token),
+            abi.encodeWithSelector(IERC20.transfer.selector),
+            abi.encode(true)
+        );
+
+        // Withdraw refund
+        vm.expectEmit(true, true, false, true, address(token));
+        emit WithdrawnForFee(multisig, refund, 10);
+        token.withdraw();
+        vm.stopPrank();
     }
 }

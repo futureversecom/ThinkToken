@@ -5,8 +5,10 @@ pragma solidity ^0.8.20;
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Capped.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
+import "@openzeppelin/contracts/access/IAccessControl.sol";
 import "./TokenRecovery.sol";
 import "./Roles.sol";
+
 uint256 constant TOTAL_SUPPLY = 1_000_000_000e6; // 1B tokens (6 decimals each)
 string constant NAME = "THINK Token";
 string constant SYMBOL = "THINK";
@@ -21,6 +23,7 @@ contract ThinkToken is TokenRecovery, ERC20Capped, Pausable {
         address manager,
         address multisig
     ) ERC20Capped(TOTAL_SUPPLY) ERC20(NAME, SYMBOL) TokenRecovery(manager) {
+        _grantRole(DEFAULT_ADMIN_ROLE, manager);
         _grantRole(MANAGER_ROLE, manager);
         _grantRole(MULTISIG_ROLE, multisig);
     }
@@ -50,11 +53,10 @@ contract ThinkToken is TokenRecovery, ERC20Capped, Pausable {
 
     function _beforeTokenTransfer(
         address,
-        address to,
+        address,
         uint256
     ) internal view override {
         require(!paused(), "Token transfers are paused");
-        require(to != address(this), "Invalid recipient address");
     }
 
     function pause() external onlyRole(MANAGER_ROLE) {
@@ -65,20 +67,8 @@ contract ThinkToken is TokenRecovery, ERC20Capped, Pausable {
         _unpause();
     }
 
-    function addManager(address addr) external onlyRole(MANAGER_ROLE) {
-        _grantRole(MANAGER_ROLE, addr);
-    }
-
-    function removeManager(address addr) external onlyRole(MANAGER_ROLE) {
-        _revokeRole(MANAGER_ROLE, addr);
-    }
-
-    function revokeMultisig(address addr) external onlyRole(MANAGER_ROLE) {
-        _revokeRole(MULTISIG_ROLE, addr);
-    }
-
     function _afterTokenTransfer(
-        address from,
+        address,
         address to,
         uint256 amount
     ) internal override {

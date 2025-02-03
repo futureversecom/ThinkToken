@@ -189,4 +189,187 @@ contract TokenRecoveryTest is Test {
         vm.expectRevert(); // Empty revert without message
         payable(address(recovery)).transfer(1 ether);
     }
+
+    function test_deposit_zero_amount() public {
+        vm.prank(user);
+        recovery.deposit(address(recovery), 0);
+        assertEq(recovery.refunds(user), 0, "No refund for zero deposit");
+        assertEq(recovery.getFees(), 0, "No fees for zero deposit");
+    }
+
+    function test_deposit_to_other_address() public {
+        vm.prank(user);
+        recovery.deposit(address(0x123), 1000);
+        assertEq(recovery.refunds(user), 0, "No refund for external deposit");
+        assertEq(recovery.getFees(), 0, "No fees for external deposit");
+    }
+
+    function test_withdraw_zero_refund() public {
+        vm.prank(user);
+        recovery.withdraw();
+        assertEq(recovery.refunds(user), 0, "Refund should remain zero");
+    }
+
+    function test_multiple_deposits() public {
+        vm.startPrank(user);
+
+        uint256 firstDeposit = 1000;
+        uint256 secondDeposit = 500;
+
+        recovery.deposit(address(recovery), firstDeposit);
+        recovery.deposit(address(recovery), secondDeposit);
+
+        uint256 totalDeposit = firstDeposit + secondDeposit;
+        uint256 expectedFee = (totalDeposit * 10) / 100;
+        uint256 expectedRefund = totalDeposit - expectedFee;
+
+        assertEq(
+            recovery.refunds(user),
+            expectedRefund,
+            "Refund should accumulate correctly"
+        );
+        assertEq(
+            recovery.getFees(),
+            expectedFee,
+            "Fees should accumulate correctly"
+        );
+
+        vm.stopPrank();
+    }
+
+    function test_set_reimbursement_fee_limits() public {
+        uint256 DEPOSIT_AMOUNT = 1000;
+
+        vm.startPrank(manager);
+
+        // Test 0% fee
+        recovery.setReimbursementFee(0);
+        assertEq(recovery.getReimbursementFee(), 0, "Fee should be set to 0%");
+
+        // Verify deposit with 0% fee
+        vm.stopPrank();
+        vm.prank(user);
+        recovery.deposit(address(recovery), DEPOSIT_AMOUNT);
+        assertEq(
+            recovery.refunds(user),
+            DEPOSIT_AMOUNT,
+            "Full amount should be refunded with 0% fee"
+        );
+        assertEq(
+            recovery.getFees(),
+            0,
+            "No fees should be collected with 0% fee"
+        );
+
+        // Reset state for next test
+        vm.mockCall(
+            address(recovery),
+            abi.encodeWithSelector(IERC20.transfer.selector),
+            abi.encode(true)
+        );
+        vm.prank(user);
+        recovery.withdraw();
+        // Clear the mock to avoid interference
+        vm.clearMockedCalls();
+
+        // Test 100% fee
+        vm.prank(manager);
+        recovery.setReimbursementFee(100);
+        assertEq(
+            recovery.getReimbursementFee(),
+            100,
+            "Fee should be set to 100%"
+        );
+
+        // Verify deposit with 100% fee
+        vm.prank(user);
+        recovery.deposit(address(recovery), DEPOSIT_AMOUNT);
+        assertEq(
+            recovery.refunds(user),
+            0,
+            "No refund should be given with 100% fee"
+        );
+        assertEq(
+            recovery.getFees(),
+            DEPOSIT_AMOUNT,
+            "All funds should go to fees with 100% fee"
+        );
+
+        // Mock transfer for admin withdrawal
+        vm.mockCall(
+            address(recovery),
+            abi.encodeWithSelector(IERC20.transfer.selector),
+            abi.encode(true)
+        );
+        vm.prank(manager);
+        recovery.adminFeesWithdrawal(manager);
+
+        // Test invalid fee percentage
+        vm.prank(manager);
+        vm.expectRevert("Invalid fee percentage");
+        recovery.setReimbursementFee(101);
+
+        vm.stopPrank();
+    }
+
+    function test_failed_transfer_on_withdraw() public {
+        // Setup: Create a deposit
+        vm.prank(user);
+        recovery.deposit(address(recovery), 1000);
+
+        // Mock failed transfer
+        vm.mockCall(
+            address(recovery),
+            abi.encodeWithSelector(IERC20.transfer.selector),
+            abi.encode(false)
+        );
+
+        // Attempt withdrawal
+        vm.prank(user);
+        vm.expectRevert("ERC20 transfer failed");
+        recovery.withdraw();
+
+        // Verify state wasn't changed
+        assertEq(
+            recovery.refunds(user),
+            900, // Original deposit minus 10% fee
+            "Refund should remain unchanged after failed transfer"
+        );
+    }
+
+    function test_multiple_withdrawals() public {
+        // Setup initial deposit
+        uint256 depositAmount = 1000;
+        uint256 expectedRefund = depositAmount - ((depositAmount * 10) / 100);
+
+        vm.prank(user);
+        recovery.deposit(address(recovery), depositAmount);
+
+        // Mock ERC20 transfer for both withdrawals
+        vm.mockCall(
+            address(recovery),
+            abi.encodeWithSelector(IERC20.transfer.selector),
+            abi.encode(true)
+        );
+
+        // First withdrawal
+        vm.expectEmit(true, true, false, true);
+        emit WithdrawnForFee(user, expectedRefund, 10);
+        vm.prank(user);
+        recovery.withdraw();
+
+        // Second withdrawal should have no effect
+        vm.prank(user);
+        recovery.withdraw();
+        assertEq(
+            recovery.getFees(),
+            depositAmount / 10,
+            "Fees should remain unchanged"
+        );
+        assertEq(
+            recovery.refunds(user),
+            0,
+            "Refund should remain zero after multiple withdrawals"
+        );
+    }
 }

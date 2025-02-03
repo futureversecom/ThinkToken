@@ -41,6 +41,7 @@ contract TokenRecovery is AccessControl, ReentrancyGuard {
     function setReimbursementFee(
         uint256 _reimbursementFee
     ) external onlyRole(TOKEN_RECOVERY_ROLE) {
+        require(_reimbursementFee <= 100, "Invalid fee percentage");
         reimbursementFee = _reimbursementFee;
     }
 
@@ -49,7 +50,10 @@ contract TokenRecovery is AccessControl, ReentrancyGuard {
         uint256 deposit = refunds[addr];
         if (deposit > 0) {
             delete refunds[addr];
-            IERC20(address(this)).transfer(addr, deposit);
+            require(
+                IERC20(address(this)).transfer(addr, deposit),
+                "ERC20 transfer failed"
+            );
             emit WithdrawnForFee(addr, deposit, reimbursementFee);
         }
     }
@@ -64,7 +68,10 @@ contract TokenRecovery is AccessControl, ReentrancyGuard {
         require(recipient != address(0), "Invalid recipient address");
 
         _fees = 0;
-        IERC20(address(this)).transfer(recipient, availableFees);
+        require(
+            IERC20(address(this)).transfer(recipient, availableFees),
+            "ERC20 transfer failed"
+        );
         emit AdminWithdrawal(recipient, availableFees);
     }
 
