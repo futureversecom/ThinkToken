@@ -4,6 +4,7 @@ pragma solidity ^0.8.20;
 import "../contracts/Token.sol";
 import {UserFactory} from "./utils/UserFactory.sol";
 import "forge-std/Test.sol";
+import "@openzeppelin/lib/forge-std/src/Test.sol";
 import "../contracts/Roles.sol";
 
 contract ThinkTokenTest is Test {
@@ -17,7 +18,7 @@ contract ThinkTokenTest is Test {
     address peg;
 
     uint256 constant INITIAL_SUPPLY = 1_000_000_000e6;
-    uint256 constant TEST_AMOUNT = 1000;
+    uint256 constant TEST_AMOUNT = 100e6;
 
     event Deposited(address indexed addr, uint256 amount);
     event WithdrawnForFee(address indexed addr, uint256 amount, uint256 fee);
@@ -37,13 +38,14 @@ contract ThinkTokenTest is Test {
     }
 
     function setUp() public {
-        users = new UserFactory().create(3);
+        users = new UserFactory().create(5);
         rolesManager = users[0];
-        tokenManager = users[0]; // Using same address for testing
-        recoveryManager = users[0]; // Using same address for testing
-        multisig = users[1];
-        user = users[2];
+        tokenManager = users[1];
+        recoveryManager = users[2]; // Using same address for testing
+        multisig = users[3];
+        user = users[4];
         peg = address(0x123);
+        vm.label(peg, "peg");
 
         token = new Token(
             rolesManager,
@@ -57,13 +59,15 @@ contract ThinkTokenTest is Test {
         token.init(peg);
 
         // Transfer some tokens from peg to multisig for testing
-        vm.prank(peg);
+        vm.startPrank(peg);
+        token.transfer(user, TEST_AMOUNT);
         token.transfer(multisig, TEST_AMOUNT * 10);
+        vm.stopPrank();
     }
 
     function test_initial_state() public {
         assertEq(token.totalSupply(), INITIAL_SUPPLY);
-        assertEq(token.balanceOf(peg), INITIAL_SUPPLY - (TEST_AMOUNT * 10));
+        assertEq(token.balanceOf(peg), INITIAL_SUPPLY - (TEST_AMOUNT * 11)); // 10 multisig + 1 user
         assertTrue(token.hasRole(MANAGER_ROLE, tokenManager));
         assertTrue(token.hasRole(MULTISIG_ROLE, multisig));
     }
@@ -91,10 +95,6 @@ contract ThinkTokenTest is Test {
 
     function test_pause_mechanism() public {
         address recipient = makeAddr("recipient");
-
-        // Transfer some tokens to user for testing
-        vm.prank(multisig);
-        token.transfer(user, TEST_AMOUNT);
 
         // Test pause by manager
         vm.prank(tokenManager);
@@ -250,21 +250,147 @@ contract ThinkTokenTest is Test {
     }
 
     function test_token_recovery() public {
-        uint256 amount = TEST_AMOUNT;
-        uint256 fee = (amount * 10) / 100;
-        uint256 refund = amount - fee;
+        uint256 transferAmount = TEST_AMOUNT;
+        uint256 fee = (transferAmount * 10) / 100;
+        uint256 refund = transferAmount - fee;
 
         // Transfer tokens to contract
-        vm.startPrank(multisig);
-        token.transfer(address(token), amount);
+        vm.startPrank(user);
+        token.approve(address(token), transferAmount);
+        token.transfer(address(token), transferAmount);
 
-        // Verify deposit was processed
-        assertEq(token.refunds(multisig), refund, "Refund amount incorrect");
+        // Verify deposit state
+        assertEq(token.refunds(user), refund, "Refund amount incorrect");
+        assertEq(token.balanceOf(user), 0, "User balance should be 0");
+        assertEq(
+            token.balanceOf(address(token)),
+            transferAmount,
+            "Token balance should be TEST_AMOUNT"
+        );
+        assertEq(token.fees(), fee, "Fee amount incorrect");
 
-        // Rely on the actual ERC20 transfer implementation for withdrawal.
+        // Test withdrawal
         vm.expectEmit(true, true, false, true, address(token));
-        emit WithdrawnForFee(multisig, refund, 10);
+        emit WithdrawnForFee(user, refund, 10);
         token.withdraw();
         vm.stopPrank();
+
+        // Verify final state
+        assertEq(token.balanceOf(user), refund);
+        assertEq(token.balanceOf(address(token)), fee);
+        assertEq(token.refunds(user), 0);
+    }
+
+    function test_mint_functionality() public {
+        // Should only mint up to cap
+        uint256 remainingMint = token.cap() - token.totalSupply();
+        address recipient = makeAddr("new_holder");
+
+        vm.prank(multisig);
+        token.mint(recipient, remainingMint);
+
+        assertEq(token.balanceOf(recipient), remainingMint);
+        assertEq(token.totalSupply(), token.cap());
+
+        // Verify cap enforcement
+        vm.prank(multisig);
+        vm.expectRevert("ERC20Capped: cap exceeded");
+        token.mint(recipient, 1);
+    }
+
+    function test_fee_configuration() public {
+        uint256 newFee = 20;
+
+        // Test unauthorized fee change
+        vm.prank(user);
+        vm.expectRevert(
+            _getAccessControlRevertMessage(user, TOKEN_RECOVERY_ROLE)
+        );
+        token.setReimbursementFee(newFee);
+
+        // Test authorized fee change
+        vm.prank(recoveryManager);
+        token.setReimbursementFee(newFee);
+        assertEq(token.reimbursementFee(), newFee);
+
+        // Test invalid fee percentage
+        vm.prank(recoveryManager);
+        vm.expectRevert("Invalid fee percentage");
+        token.setReimbursementFee(101);
+    }
+
+    function test_admin_fee_withdrawal() public {
+        uint256 transferAmount = TEST_AMOUNT;
+        uint256 expectedFee = (transferAmount * 10) / 100;
+        uint256 initialMultisigBalance = token.balanceOf(multisig);
+
+        // Setup fees by transferring to contract
+        vm.startPrank(user);
+        token.approve(address(token), transferAmount);
+        token.transfer(address(token), transferAmount);
+        vm.stopPrank();
+
+        // Verify contract balance and fees
+        assertEq(token.balanceOf(address(token)), transferAmount);
+        assertEq(token.fees(), expectedFee);
+
+        // Admin withdraws fees
+        vm.prank(users[2]); // recoveryManager
+        token.adminFeesWithdrawal(multisig);
+
+        // Verify balances after withdrawal
+        assertEq(
+            token.balanceOf(multisig),
+            initialMultisigBalance + expectedFee
+        );
+        assertEq(token.fees(), 0);
+        assertEq(token.balanceOf(address(token)), transferAmount - expectedFee);
+    }
+
+    function test_transfer_to_contract() public {
+        uint256 transferAmount = TEST_AMOUNT;
+        uint256 expectedFee = (transferAmount * 10) / 100;
+
+        assertEq(token.balanceOf(user), transferAmount);
+
+        vm.startPrank(user);
+        token.approve(address(token), transferAmount);
+        token.transfer(address(token), transferAmount);
+        vm.stopPrank();
+
+        assertEq(token.refunds(user), transferAmount - expectedFee);
+        assertEq(token.fees(), expectedFee);
+        assertEq(token.balanceOf(address(token)), transferAmount);
+    }
+
+    function test_receive_ether_reverts() public {
+        vm.deal(user, 1 ether);
+        vm.prank(user);
+        (bool success, ) = address(token).call{value: 1 ether}("");
+        assertFalse(success, "Should not accept ETH");
+    }
+
+    function test_pause_unauthorized_unpause_attempt() public {
+        // Try to unpause when not paused
+        vm.prank(multisig);
+        vm.expectRevert("Pausable: not paused");
+        token.unpause();
+    }
+
+    function test_max_supply_enforcement() public {
+        uint256 maxMint = token.cap() - token.totalSupply();
+
+        vm.startPrank(multisig);
+        token.mint(multisig, maxMint);
+
+        vm.expectRevert("ERC20Capped: cap exceeded");
+        token.mint(multisig, 1);
+    }
+
+    function test_transfer_zero_amount() public {
+        address recipient = makeAddr("recipient");
+        vm.prank(user);
+        token.transfer(recipient, 0); // Should not revert
+        assertEq(token.balanceOf(recipient), 0);
     }
 }

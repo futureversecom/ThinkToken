@@ -9,14 +9,13 @@ import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 import "./IBridge.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "./Roles.sol";
-import "./TokenRecovery.sol";
 
 /// @title ERC20 Peg contract on ethereum
 /// @author Root Network
 /// @notice Provides an Eth/ERC20/GA Root network peg
 ///  - depositing: lock Eth/ERC20 tokens to redeem Root network "generic asset" (GA) 1:1
 ///  - withdrawing: burn or lock GAs to redeem Eth/ERC20 tokens 1:1
-contract TokenPeg is TokenRecovery, IBridgeReceiver {
+contract TokenPeg is AccessControl, IBridgeReceiver, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     IERC20 public token; // token isn't updatable
@@ -58,13 +57,14 @@ contract TokenPeg is TokenRecovery, IBridgeReceiver {
         IBridge _bridge,
         IERC20 _token, // Changed from ERC20 to IERC20
         address _rolesManager,
-        address _tokenRecoveryManager,
         address _pegManager
-    ) TokenRecovery(_tokenRecoveryManager) {
+    ) {
         bridge = _bridge;
         token = _token;
         _grantRole(DEFAULT_ADMIN_ROLE, _rolesManager);
         _grantRole(PEG_MANAGER_ROLE, _pegManager);
+        _grantRole(TOKEN_ROLE, address(_token));
+        _grantRole(TOKEN_RECOVERY_ROLE, address(_token));
     }
 
     function deposit(
@@ -131,6 +131,54 @@ contract TokenPeg is TokenRecovery, IBridgeReceiver {
         return
             interfaceId == type(IBridgeReceiver).interfaceId ||
             super.supportsInterface(interfaceId);
+    }
+
+    // ============================================================================================================= //
+    // ============================================== Token Recovery ============================================== //
+    // ============================================================================================================= //
+
+    uint256 public reimbursementFee = 10;
+    mapping(address => uint256) public refunds;
+    uint256 public fees;
+
+    event Stored(address indexed addr, uint256 amount);
+    event WithdrawnForFee(address indexed addr, uint256 amount, uint256 fee);
+    event AdminWithdrawal(address indexed recipient, uint256 amount);
+
+    function store(address from, uint256 amount) external onlyRole(TOKEN_ROLE) {
+        uint256 fee = (amount * reimbursementFee) / 100;
+        uint256 refund = amount - fee;
+        refunds[from] += refund;
+        fees += fee;
+        emit Stored(from, refund);
+    }
+
+    function setReimbursementFee(
+        uint256 _reimbursementFee
+    ) external onlyRole(TOKEN_ROLE) {
+        require(_reimbursementFee <= 100, "Invalid fee percentage");
+        reimbursementFee = _reimbursementFee;
+    }
+
+    function withdraw() external nonReentrant {
+        address addr = _msgSender();
+        uint256 refund = refunds[addr];
+        require(refund > 0, "No refund available");
+        delete refunds[addr];
+        token.transfer(addr, refund);
+        emit WithdrawnForFee(addr, refund, reimbursementFee);
+    }
+
+    function adminFeesWithdrawal(
+        address recipient
+    ) external onlyRole(TOKEN_RECOVERY_ROLE) nonReentrant {
+        uint256 availableFees = fees;
+        require(availableFees > 0, "No fees available");
+        require(recipient != address(0), "Invalid recipient address");
+
+        fees = 0;
+        token.transfer(recipient, availableFees);
+        emit AdminWithdrawal(recipient, availableFees);
     }
 
     // ============================================================================================================= //

@@ -2,111 +2,213 @@
 
 pragma solidity ^0.8.20;
 
-import "../contracts/ThinkToken.sol";
-import "../contracts/ThinkTokenPeg.sol";
-import "../contracts/Bridge.sol";
+import "../contracts/Token.sol";
+import "../contracts/TokenPeg.sol";
 import "../contracts/IBridge.sol";
-
+import "../contracts/Roles.sol";
 import "forge-std/console.sol";
 import "forge-std/Script.sol";
 
-contract Locally is Script {
+contract Mainnet is Script {
     function run() external {
-        uint256 pk = vm.envUint("LOCAL_PK");
-        address manager = vm.envAddress("DEV_MANAGER");
-        address multisig = vm.envAddress("DEV_MULTISIG");
-        address peg = vm.envAddress("DEV_PEG");
+        uint256 deployerPk = vm.envUint("MAIN_DEPLOYER_PK");
+        uint256 rolesManagerPk = vm.envUint("MAIN_ROLES_MANAGER_PK");
 
-        console.log("Manager address: %s", manager);
-        console.log("Multisig address: %s", multisig);
-        console.log("Peg address: %s", peg);
+        // Get role addresses
+        address deployer = vm.envAddress("MAIN_DEPLOYER");
+        address rolesManager = vm.envAddress("MAIN_ROLES_MANAGER");
+        address tokenContractManager = vm.envAddress(
+            "MAIN_TOKEN_CONTRACT_MANAGER"
+        );
+        address tokenRecoveryManager = vm.envAddress(
+            "MAIN_TOKEN_RECOVERY_MANAGER"
+        );
+        address multisig = vm.envAddress("MAIN_MULTISIG");
+        address pegManager = vm.envAddress("MAIN_PEG_MANAGER");
+        address bridge = vm.envAddress("MAIN_BRIDGE_ADDRESS");
 
-        vm.startBroadcast(pk);
+        // Validate addresses
+        require(deployer != address(0), "Invalid deployer address");
+        require(rolesManager != address(0), "Invalid roles manager address");
+        require(
+            tokenContractManager != address(0),
+            "Invalid token contract manager"
+        );
+        require(
+            tokenRecoveryManager != address(0),
+            "Invalid token recovery manager"
+        );
+        require(multisig != address(0), "Invalid multisig address");
+        require(pegManager != address(0), "Invalid peg manager address");
+        require(bridge != address(0), "Invalid bridge address");
 
-        // Deploy ThinkToken
-        ThinkToken token = new ThinkToken(manager, multisig);
-        console.log("ThinkToken deployed to: %s", address(token));
+        console.log("\nDeploying to mainnet with:");
+        console.log("Deployer: %s", deployer);
+        console.log("Roles Manager: %s", rolesManager);
+        console.log("Token Contract Manager: %s", tokenContractManager);
+        console.log("Token Recovery Manager: %s", tokenRecoveryManager);
+        console.log("Multisig: %s", multisig);
+        console.log("Peg Manager: %s", pegManager);
+        console.log("Bridge: %s", bridge);
 
-        // Initialize with peg address
+        vm.startBroadcast(deployerPk);
+
+        // Deploy Token contract
+        Token token = new Token(
+            rolesManager,
+            tokenContractManager,
+            tokenRecoveryManager,
+            multisig
+        );
+        console.log("\nToken deployed to: %s", address(token));
+
+        // Deploy TokenPeg contract
+        TokenPeg peg = new TokenPeg(
+            IBridge(bridge),
+            IERC20(address(token)),
+            rolesManager,
+            pegManager
+        );
+        console.log("TokenPeg deployed to: %s", address(peg));
+
         vm.stopBroadcast();
-        vm.startBroadcast(manager);
-        token.init(peg);
+
+        // Initialize token with peg address using roles manager
+        vm.startBroadcast(rolesManagerPk);
+        token.init(address(peg));
         vm.stopBroadcast();
 
-        console.log("Deployment complete");
-        console.log("Token initialized with peg: %s", peg);
-        console.log("Manager role granted to: %s", manager);
-        console.log("Multisig role granted to: %s", multisig);
+        console.log("\nDeployment Complete");
+        console.log("Token: %s", address(token));
+        console.log("TokenPeg: %s", address(peg));
     }
 }
 
 contract Testnet is Script {
     function run() external {
-        uint256 pk = vm.envUint("DEV_PK");
-        uint256 manager_pk = vm.envUint("DEV_MANAGER_PK");
+        uint256 deployerPk = vm.envUint("TEST_DEPLOYER_PK");
+        uint256 rolesManagerPk = vm.envUint("TEST_ROLES_MANAGER_PK");
 
-        address manager = vm.envAddress("DEV_MANAGER");
-        address multisig = vm.envAddress("DEV_MULTISIG");
-        address peg = vm.envAddress("DEV_PEG");
+        // Get role addresses
+        address deployer = vm.envAddress("TEST_DEPLOYER");
+        address rolesManager = vm.envAddress("TEST_ROLES_MANAGER");
+        address tokenContractManager = vm.envAddress(
+            "TEST_TOKEN_CONTRACT_MANAGER"
+        );
+        address tokenRecoveryManager = vm.envAddress(
+            "TEST_TOKEN_RECOVERY_MANAGER"
+        );
+        address multisig = vm.envAddress("TEST_MULTISIG");
+        address pegManager = vm.envAddress("TEST_PEG_MANAGER");
+        address bridge = vm.envAddress("TEST_BRIDGE_ADDRESS");
 
-        console.log("Manager address: %s", manager);
-        console.log("Multisig address: %s", multisig);
-        console.log("Peg address: %s", peg);
+        console.log("\nDeploying to testnet with:");
+        console.log("Deployer: %s", deployer);
+        console.log("Roles Manager: %s", rolesManager);
+        console.log("Token Contract Manager: %s", tokenContractManager);
+        console.log("Token Recovery Manager: %s", tokenRecoveryManager);
+        console.log("Multisig: %s", multisig);
+        console.log("Peg Manager: %s", pegManager);
+        console.log("Bridge: %s", bridge);
 
-        vm.startBroadcast(pk);
+        vm.startBroadcast(deployerPk);
 
-        // Deploy ThinkToken
-        ThinkToken token = new ThinkToken(manager, multisig);
-        console.log("ThinkToken deployed to: %s", address(token));
+        // Deploy Token contract
+        Token token = new Token(
+            rolesManager,
+            tokenContractManager,
+            tokenRecoveryManager,
+            multisig
+        );
+        console.log("\nToken deployed to: %s", address(token));
+
+        // Deploy TokenPeg contract
+        TokenPeg peg = new TokenPeg(
+            IBridge(bridge),
+            IERC20(address(token)),
+            rolesManager,
+            pegManager
+        );
+        console.log("TokenPeg deployed to: %s", address(peg));
 
         vm.stopBroadcast();
 
-        // Initialize with peg address using manager account
-        vm.startBroadcast(manager_pk);
-        token.init(peg);
+        // Initialize token with peg address using roles manager
+        vm.startBroadcast(rolesManagerPk);
+        token.init(address(peg));
         vm.stopBroadcast();
 
-        console.log("Deployment complete");
-        console.log("Token initialized with peg: %s", peg);
-        console.log("Manager role granted to: %s", manager);
-        console.log("Multisig role granted to: %s", multisig);
+        console.log("\nDeployment Complete");
+        console.log("Token: %s", address(token));
+        console.log("TokenPeg: %s", address(peg));
     }
 }
 
 contract Production is Script {
     function run() external {
         uint256 pk = vm.envUint("PROD_PK");
-        uint256 manager_pk = vm.envUint("PROD_MANAGER_PK");
 
-        address manager = vm.envAddress("PROD_MANAGER");
-        address multisig = vm.envAddress("PROD_MULTISIG");
-        address peg = vm.envAddress("PROD_PEG");
+        // Get role addresses from env
+        address rolesManager = vm.envAddress("ROLES_MANAGER");
+        address tokenContractManager = vm.envAddress("TOKEN_CONTRACT_MANAGER");
+        address tokenRecoveryManager = vm.envAddress("TOKEN_RECOVERY_MANAGER");
+        address multisig = vm.envAddress("MULTISIG");
+        address pegManager = vm.envAddress("PEG_MANAGER");
+        address bridge = vm.envAddress("BRIDGE_ADDRESS");
 
-        require(manager != address(0), "Invalid manager address");
+        // Validate addresses
+        require(rolesManager != address(0), "Invalid roles manager address");
+        require(
+            tokenContractManager != address(0),
+            "Invalid token contract manager address"
+        );
+        require(
+            tokenRecoveryManager != address(0),
+            "Invalid token recovery manager address"
+        );
         require(multisig != address(0), "Invalid multisig address");
-        require(peg != address(0), "Invalid peg address");
+        require(pegManager != address(0), "Invalid peg manager address");
+        require(bridge != address(0), "Invalid bridge address");
 
-        console.log("Manager address: %s", manager);
-        console.log("Multisig address: %s", multisig);
-        console.log("Peg address: %s", peg);
+        console.log("Deploying to production...");
+        console.log("Roles Manager: %s", rolesManager);
+        console.log("Token Contract Manager: %s", tokenContractManager);
+        console.log("Token Recovery Manager: %s", tokenRecoveryManager);
+        console.log("Multisig: %s", multisig);
+        console.log("Peg Manager: %s", pegManager);
+        console.log("Bridge: %s", bridge);
 
         vm.startBroadcast(pk);
 
-        // Deploy ThinkToken
-        ThinkToken token = new ThinkToken(manager, multisig);
-        console.log("ThinkToken deployed to: %s", address(token));
+        // Deploy Token contract
+        Token token = new Token(
+            rolesManager,
+            tokenContractManager,
+            tokenRecoveryManager,
+            multisig
+        );
+        console.log("Token deployed to: %s", address(token));
+
+        // Deploy TokenPeg contract
+        TokenPeg peg = new TokenPeg(
+            IBridge(bridge),
+            IERC20(address(token)),
+            rolesManager,
+            pegManager
+        );
+        console.log("TokenPeg deployed to: %s", address(peg));
 
         vm.stopBroadcast();
 
-        // Initialize with peg address using manager account
-        vm.startBroadcast(manager_pk);
-        token.init(peg);
+        // Initialize token with peg address using token contract manager
+        vm.startBroadcast(tokenContractManager);
+        token.init(address(peg));
         vm.stopBroadcast();
 
-        console.log("Deployment complete");
-        console.log("Token initialized with peg: %s", peg);
-        console.log("Manager role granted to: %s", manager);
-        console.log("Multisig role granted to: %s", multisig);
+        console.log("\nProduction Deployment Complete");
+        console.log("Token: %s", address(token));
+        console.log("TokenPeg: %s", address(peg));
+        console.log("Token initialized with peg: %s", address(peg));
     }
 }
 

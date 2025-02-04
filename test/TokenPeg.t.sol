@@ -80,13 +80,7 @@ contract TokenPegTest is Test {
         token.init(address(this));
 
         // Deploy peg
-        peg = new TokenPeg(
-            bridge,
-            token,
-            rolesManager,
-            recoveryManager,
-            pegManager
-        );
+        peg = new TokenPeg(bridge, token, rolesManager, pegManager);
 
         // Setup initial state
         vm.prank(pegManager);
