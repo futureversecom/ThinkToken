@@ -187,6 +187,11 @@ Deployment Complete
 
 ### Porcini
 
+- Token deployed to: [0x2fE0890D74e68e3A61213213Fb7F3221D50979F3](https://porcini.rootscan.io/addresses/0x2fE0890D74e68e3A61213213Fb7F3221D50979F3/contract/read)
+- TokenPeg deployed to: [0x9153442a8AD734334424d39FDfF8524525529a7d](https://porcini.rootscan.io/addresses/0x9153442a8AD734334424d39FDfF8524525529a7d/contract/read)
+
+Log:
+
 ```
 Bridge deployed to: 0xe800b81c76Af4D3a81802DE47c46dA1E8507d034
 The owner of the Bridge is: 0xeb24a849E6C908D4166D34D7E3133B452CB627D2
