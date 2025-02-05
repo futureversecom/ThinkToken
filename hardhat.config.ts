@@ -84,8 +84,28 @@ const config: HardhatUserConfig = {
       accounts: mainAccounts
     }
   },
-  etherscan: {
-    apiKey: ""
+  // etherscan: {
+  //   apiKey: {
+  //     sepolia: ETHERSCAN_API_KEY,
+  //     porcini: ETHERSCAN_API_KEY
+  //   },
+  //   customChains: [
+  //     {
+  //       network: "porcini",
+  //       chainId: 7672,
+  //       urls: {
+  //         apiURL: "https://sourcify.dev/server",
+  //         browserURL: "https://repo.sourcify.dev"
+  //       }
+  //     }
+  //   ]
+  // },
+  sourcify: {
+    enabled: true,
+    // Optional: specify a different Sourcify server
+    apiUrl: "https://sourcify.dev/server",
+    // Optional: specify a different Sourcify repository
+    browserUrl: "https://repo.sourcify.dev"
   }
 };
 
