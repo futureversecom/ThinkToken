@@ -81,34 +81,6 @@ forge test --gas-report
 1. Copy `.env.example` to `.env`
 2. Configure environment variables:
 
-#### Mainnet Deployment
-
-```
-MAIN_DEPLOYER_PK=        # Deployer private key
-MAIN_DEPLOYER=           # Deployer address
-MAIN_ROLES_MANAGER=      # Roles manager address
-MAIN_ROLES_MANAGER_PK=   # Roles manager private key
-MAIN_TOKEN_CONTRACT_MANAGER=
-MAIN_TOKEN_RECOVERY_MANAGER=
-MAIN_MULTISIG=
-MAIN_PEG_MANAGER=
-MAIN_BRIDGE_ADDRESS=
-```
-
-#### Testnet Deployment
-
-```
-TEST_DEPLOYER_PK=
-TEST_DEPLOYER=
-TEST_ROLES_MANAGER=
-TEST_ROLES_MANAGER_PK=
-TEST_TOKEN_CONTRACT_MANAGER=
-TEST_TOKEN_RECOVERY_MANAGER=
-TEST_MULTISIG=
-TEST_PEG_MANAGER=
-TEST_BRIDGE_ADDRESS=
-```
-
 ### Deployment Scripts
 
 #### Using Foundry
@@ -211,4 +183,28 @@ Deployment Complete
   Bridge: 0x1a4232995e2C8F67ef7bD94EACD7Dd9C67160Ff8
   Token: 0xd9088A9f07ac390BC0E80D1D412638bFFe6a8bc7
   TokenPeg: 0x8556A532Bf8E1F0c46FAb8a3ec2Ee5ac9d58169b
+```
+
+### Porcini
+
+```
+Bridge deployed to: 0xe800b81c76Af4D3a81802DE47c46dA1E8507d034
+The owner of the Bridge is: 0xeb24a849E6C908D4166D34D7E3133B452CB627D2
+
+Token deployed to: 0x2fE0890D74e68e3A61213213Fb7F3221D50979F3
+The Roles manager is: 0x7D2713d17C88d08daa7fE5f437B4205deA977ade
+The manager of the Token is: 0x1Fb0E85b7Ba55F0384d0E06D81DF915aeb3baca3
+The recovery manager is: 0xd0eEdbe42BFB9d3082e4AB16F2925962233e2C36
+The multisig of the Token is: 0xd0eEdbe42BFB9d3082e4AB16F2925962233e2C36
+
+TokenPeg deployed to: 0x9153442a8AD734334424d39FDfF8524525529a7d
+The Roles manager of the TokenPeg is: 0x7D2713d17C88d08daa7fE5f437B4205deA977ade
+The peg manager of the TokenPeg is: 0xbecb053527Bf428C7A44743B8b00b30e42B0e418
+Token role set (to store refunds): 0x2fE0890D74e68e3A61213213Fb7F3221D50979F3
+
+Starting setup phase...
+Bridge activated
+Token initialized with peg address: 0x9153442a8AD734334424d39FDfF8524525529a7d
+TokenPeg deposits/withdrawals activated
+Pallet address set to: 0x0000000000000000000000000000000000000000
 ```
