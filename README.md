@@ -35,7 +35,7 @@ The system uses the following roles:
 - `MANAGER_ROLE` - Can initialize token and pause contract
 - `MULTISIG_ROLE` - Can mint/burn tokens and unpause contract
 - `TOKEN_RECOVERY_ROLE` - Can withdraw fees and manage fees
-- `PEG_MANAGER_ROLE` - Can manage peg operations
+- `PEG_MANAGER_ROLE` - Can manage peg operations. !! ATTN: it can withdraw Peg's funds.
 - `TOKEN_ROLE` - Token contract's role to call TokenPeg contract to record refunds
 
 ## Development
@@ -183,3 +183,32 @@ When tokens are sent to the peg contract:
 - Production deployments should use multisig wallets for critical roles
 - Regular security audits are recommended
 - Test thoroughly before mainnet deployment
+
+## Deployments
+
+### Sepolia
+
+```
+Bridge deployed to: 0x1a4232995e2C8F67ef7bD94EACD7Dd9C67160Ff8
+  The owner of the Bridge is: 0xeb24a849E6C908D4166D34D7E3133B452CB627D2
+
+Token deployed to: 0xd9088A9f07ac390BC0E80D1D412638bFFe6a8bc7
+  The Roles manager is: 0x7D2713d17C88d08daa7fE5f437B4205deA977ade
+  The manager of the Token is: 0x1Fb0E85b7Ba55F0384d0E06D81DF915aeb3baca3
+  The recovery manager is: 0xd0eEdbe42BFB9d3082e4AB16F2925962233e2C36
+  The multisig of the Token is: 0xd0eEdbe42BFB9d3082e4AB16F2925962233e2C36
+
+TokenPeg deployed to: 0x8556A532Bf8E1F0c46FAb8a3ec2Ee5ac9d58169b
+  The Roles manager of the TokenPeg is: 0x7D2713d17C88d08daa7fE5f437B4205deA977ade
+  The peg manager of the TokenPeg is: 0xbecb053527Bf428C7A44743B8b00b30e42B0e418
+  Token role set (to store refunds): 0xd9088A9f07ac390BC0E80D1D412638bFFe6a8bc7
+  Bridge activated
+  Token initialized with peg address: 0x8556A532Bf8E1F0c46FAb8a3ec2Ee5ac9d58169b
+  TokenPeg deposits/withdrawals activated
+  Pallet address set to: 0x0000000000000000000000000000000000000000
+
+Deployment Complete
+  Bridge: 0x1a4232995e2C8F67ef7bD94EACD7Dd9C67160Ff8
+  Token: 0xd9088A9f07ac390BC0E80D1D412638bFFe6a8bc7
+  TokenPeg: 0x8556A532Bf8E1F0c46FAb8a3ec2Ee5ac9d58169b
+```
