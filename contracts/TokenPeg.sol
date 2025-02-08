@@ -68,7 +68,7 @@ contract TokenPeg is AccessControl, IBridgeReceiver, ReentrancyGuard {
     }
 
     function deposit(
-        address _tokenAddress, // ? 2Marco: do we need this?
+        address, // ? 2BridgeTeam: do we need this?
         uint128 _amount,
         address _destination
     ) external payable {

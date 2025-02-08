@@ -164,3 +164,53 @@ contract Testnet is Script {
         console.log("TokenPeg: %s", address(peg));
     }
 }
+
+contract TokenOnly is Script {
+    uint256 deployerPk = vm.envUint("TEST_DEPLOYER_PK");
+    uint256 rolesManagerPk = vm.envUint("TEST_ROLES_MANAGER_PK");
+    uint256 tokenManagerPk = vm.envUint("TEST_TOKEN_MANAGER_PK");
+    uint256 pegManagerPk = vm.envUint("TEST_PEG_MANAGER_PK");
+
+    address deployer = vm.envAddress("TEST_DEPLOYER");
+    address rolesManager = vm.envAddress("TEST_ROLES_MANAGER");
+    address tokenManager = vm.envAddress("TEST_TOKEN_MANAGER");
+    address recoveryManager = vm.envAddress("TEST_TOKEN_RECOVERY_MANAGER");
+    address pegManager = vm.envAddress("TEST_PEG_MANAGER");
+
+    address multisig = vm.envAddress("TEST_MULTISIG");
+    address peg = vm.envAddress("TEST_PEG");
+
+    function run() external {
+        vm.startBroadcast(deployerPk);
+
+        Token token = new Token(
+            rolesManager,
+            tokenManager,
+            recoveryManager,
+            multisig
+        );
+        console.log("\nToken deployed to: %s", address(token));
+        console.log("The Roles manager is: %s", rolesManager);
+        console.log("The manager of the Token is: %s", tokenManager);
+        console.log("The recovery manager is: %s", recoveryManager);
+        console.log("The multisig of the Token is: %s", multisig);
+
+        vm.stopBroadcast();
+
+        /**
+         * Setup:
+         * 1. Initialize token with peg address
+         * 2. Activate bridge
+         * 3. Activate TokenPeg deposits
+         */
+
+        vm.startBroadcast(tokenManagerPk); // Roles manager is the token contract manager
+        token.init(address(peg));
+        console.log("Token initialized with peg address: %s", address(peg));
+        vm.stopBroadcast();
+
+        console.log("\nDeployment Complete");
+        console.log("Token: %s", address(token));
+        console.log("TokenPeg: %s", address(peg));
+    }
+}
