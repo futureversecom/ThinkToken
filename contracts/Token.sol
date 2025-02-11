@@ -73,10 +73,10 @@ contract Token is AccessControl, ReentrancyGuard, ERC20Capped, Pausable {
         assembly {
             size := extcodesize(caller())
         }
-        bool depositToPeg = size > 0;
-        bool directTransferToPeg = to == address(peg) && !depositToPeg;
+        bool isContractCall = size > 0;
+        bool userTransfersToPeg = to == address(peg) && !isContractCall;
 
-        require(!directTransferToPeg, "Use deposit() to transfer to contract");
+        require(!userTransfersToPeg, "Use deposit() to transfer to contract");
     }
 
     function pause() external onlyRole(MANAGER_ROLE) {
