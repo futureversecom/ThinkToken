@@ -3,5 +3,6 @@
 /* eslint-disable */
 export * as iBridgeSol from "./IBridge.sol";
 export { Bridge__factory } from "./Bridge__factory";
+export { ERC20Peg__factory } from "./ERC20Peg__factory";
 export { Token__factory } from "./Token__factory";
 export { TokenPeg__factory } from "./TokenPeg__factory";

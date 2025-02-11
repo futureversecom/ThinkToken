@@ -61,6 +61,10 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.Bridge__factory>;
     getContractFactory(
+      name: "ERC20Peg",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.ERC20Peg__factory>;
+    getContractFactory(
       name: "IBridge",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.IBridge__factory>;
@@ -137,6 +141,11 @@ declare module "hardhat/types/runtime" {
       address: string,
       signer?: ethers.Signer
     ): Promise<Contracts.Bridge>;
+    getContractAt(
+      name: "ERC20Peg",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.ERC20Peg>;
     getContractAt(
       name: "IBridge",
       address: string,

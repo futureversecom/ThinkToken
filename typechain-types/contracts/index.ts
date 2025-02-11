@@ -4,5 +4,6 @@
 import type * as iBridgeSol from "./IBridge.sol";
 export type { iBridgeSol };
 export type { Bridge } from "./Bridge";
+export type { ERC20Peg } from "./ERC20Peg";
 export type { Token } from "./Token";
 export type { TokenPeg } from "./TokenPeg";

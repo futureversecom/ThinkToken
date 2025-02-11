@@ -2,41 +2,42 @@
 
 ## Overview
 
-This repository contains smart contracts for a token system with bridging capabilities and refund mechanisms.
+This repository contains smart contracts for a token system with bridging capabilities between Ethereum and The Root Network.
 
-## Scope
+## Key Components
 
-Core contracts:
+- `Token.sol`: ERC20 token with access control and pausable features
+- `ERC20Peg.sol`: Bridge contract for cross-chain token operations
+- `Bridge.sol`: Core bridge contract for cross-chain messaging
+- `Roles.sol` - Role definitions for access control
 
-- `contracts/Token.sol` - Main ERC20 token implementation with refund mechanism
-- `contracts/TokenPeg.sol` - Bridge peg contract for cross-chain operations
-- `contracts/Roles.sol` - Role definitions for access control
+### Token Contract
 
-Test contracts:
+Uses OpenZeppelin's AccessControl with roles:
 
-- `test/TokenPegRefund.t.sol` - Tests for token refund functionality
-- `test/Token.t.sol` - Core token functionality tests
+- `DEFAULT_ADMIN_ROLE`: Can grant/revoke roles
+- `MANAGER_ROLE`: Can initialize token and pause
+- `MULTISIG_ROLE`: Can mint/burn tokens and unpause
+
+### ERC20Peg Contract
+
+Uses OpenZeppelin's Ownable pattern:
+
+- Owner can:
+  - Set deposits active/inactive
+  - Set withdrawals active/inactive
+  - Update bridge address
+  - Set pallet address
+  - Perform emergency withdrawals
 
 ## Features
 
-- ERC20 token with 6 decimals
+- ERC20 token with 18 decimals
 - Total supply capped at 1B tokens
+- Cross-chain token bridging
 - Pausable transfers
-- Token refund mechanism
-- Role-based access control
+- Secure deposit/withdrawal mechanisms
 - Bridge integration for cross-chain operations
-- Fee collection system
-
-## Roles
-
-The system uses the following roles:
-
-- `DEFAULT_ADMIN_ROLE` - Can grant/revoke other roles
-- `MANAGER_ROLE` - Can initialize token and pause contract
-- `MULTISIG_ROLE` - Can mint/burn tokens and unpause contract
-- `TOKEN_RECOVERY_ROLE` - Can withdraw fees and manage fees
-- `PEG_MANAGER_ROLE` - Can manage peg operations. !! ATTN: it can withdraw Peg's funds.
-- `TOKEN_ROLE` - Token contract's role to call TokenPeg contract to record refunds
 
 ## Development
 
@@ -46,18 +47,13 @@ The system uses the following roles:
 - Foundry
 - Git
 
-### Installation
+### Setup
 
 ```bash
-# Clone the repository
 git clone <repository-url>
 cd <repository-name>
-
-# Install dependencies
 forge install
 npm install
-
-# Copy environment file
 cp .env.example .env
 ```
 
@@ -66,9 +62,6 @@ cp .env.example .env
 ```bash
 # Run all tests
 forge test
-
-# Run specific test file
-forge test --match-contract TokenPegRefund
 
 # Run with gas reporting
 forge test --gas-report
@@ -79,14 +72,15 @@ forge test --gas-report
 ### Environment Setup
 
 1. Copy `.env.example` to `.env`
-2. Configure environment variables:
+2. Fill in required variables:
+   - RPC URLs
+   - Private keys
+   - Contract addresses
 
-### Deployment Scripts
-
-#### Using Foundry
+### Deploy
 
 ```bash
-# Mainnet deployment
+# Using Foundry
 forge script scripts/Deploy.s.sol:Mainnet --rpc-url $MAIN_RPC_URL --broadcast
 
 # Testnet deployment
@@ -123,71 +117,29 @@ npx hardhat verify --network <network> <peg-address> \
   "<peg-manager>"
 ```
 
-## Contract Interaction
-
-### Key Functions
-
-#### Token Contract
-
-- `init(address peg)` - Initialize token with peg address (token contract manager only)
-- `pause()` - Pause token transfers (manager only)
-- `unpause()` - Unpause token transfers (multisig only)
-- `setReimbursementFee(uint256)` - Set refund fee percentage (token recovery role only)
-
-#### TokenPeg Contract
-
-- `withdraw()` - Withdraw available refund
-- `adminFeesWithdrawal(address)` - Withdraw collected fees (token recovery role only)
-- `setWithdrawalsActive(bool)` - Enable/disable withdrawals (peg manager only)
-
-### Refund Mechanism
-
-When tokens are sent to the peg contract:
-
-1. A fee percentage is taken (default 10%)
-2. The remaining amount is stored as a refund
-3. The sender can withdraw their refund using `withdraw()`
-4. Collected fees can be withdrawn by token recovery role
-
 ## Security Considerations
 
-- All private keys should be kept secure and never committed to version control
-- Production deployments should use multisig wallets for critical roles
-- Regular security audits are recommended
-- Test thoroughly before mainnet deployment
+- Owner privileges in ERC20Peg should be managed via multisig
+- Private keys must never be committed to version control
+- Regular security audits recommended
+- Test coverage should be maintained at 100%
 
 ## Deployments
 
 ### Sepolia
 
 ```
-Bridge deployed to: 0x1a4232995e2C8F67ef7bD94EACD7Dd9C67160Ff8
-  The owner of the Bridge is: 0xeb24a849E6C908D4166D34D7E3133B452CB627D2
 
-Token deployed to: 0xd9088A9f07ac390BC0E80D1D412638bFFe6a8bc7
+Token deployed to: 0x7A462Cc5F03D8B9f0dDa83BFf6f5C65974228950
   The Roles manager is: 0x7D2713d17C88d08daa7fE5f437B4205deA977ade
   The manager of the Token is: 0x1Fb0E85b7Ba55F0384d0E06D81DF915aeb3baca3
-  The recovery manager is: 0xd0eEdbe42BFB9d3082e4AB16F2925962233e2C36
   The multisig of the Token is: 0xd0eEdbe42BFB9d3082e4AB16F2925962233e2C36
 
-TokenPeg deployed to: 0x8556A532Bf8E1F0c46FAb8a3ec2Ee5ac9d58169b
-  The Roles manager of the TokenPeg is: 0x7D2713d17C88d08daa7fE5f437B4205deA977ade
-  The peg manager of the TokenPeg is: 0xbecb053527Bf428C7A44743B8b00b30e42B0e418
-  Token role set (to store refunds): 0xd9088A9f07ac390BC0E80D1D412638bFFe6a8bc7
-  Bridge activated
-  Token initialized with peg address: 0x8556A532Bf8E1F0c46FAb8a3ec2Ee5ac9d58169b
-  TokenPeg deposits/withdrawals activated
-  Pallet address set to: 0x0000000000000000000000000000000000000000
-
-Deployment Complete
-  Bridge: 0x1a4232995e2C8F67ef7bD94EACD7Dd9C67160Ff8
-  Token: 0xd9088A9f07ac390BC0E80D1D412638bFFe6a8bc7
-  TokenPeg: 0x8556A532Bf8E1F0c46FAb8a3ec2Ee5ac9d58169b
 ```
 
 ### Porcini
 
-- Token deployed to: [0x2fE0890D74e68e3A61213213Fb7F3221D50979F3](https://porcini.rootscan.io/addresses/0x2fE0890D74e68e3A61213213Fb7F3221D50979F3/contract/read)
+<!-- - Token deployed to: [0x2fE0890D74e68e3A61213213Fb7F3221D50979F3](https://porcini.rootscan.io/addresses/0x2fE0890D74e68e3A61213213Fb7F3221D50979F3/contract/read)
 - TokenPeg deployed to: [0x9153442a8AD734334424d39FDfF8524525529a7d](https://porcini.rootscan.io/addresses/0x9153442a8AD734334424d39FDfF8524525529a7d/contract/read)
 
 Log:
@@ -212,4 +164,4 @@ Bridge activated
 Token initialized with peg address: 0x9153442a8AD734334424d39FDfF8524525529a7d
 TokenPeg deposits/withdrawals activated
 Pallet address set to: 0x0000000000000000000000000000000000000000
-```
+``` -->

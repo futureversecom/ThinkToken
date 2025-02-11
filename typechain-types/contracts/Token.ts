@@ -30,7 +30,6 @@ import type {
 export interface TokenInterface extends utils.Interface {
   functions: {
     "DEFAULT_ADMIN_ROLE()": FunctionFragment;
-    "adminFeesWithdrawal(address)": FunctionFragment;
     "allowance(address,address)": FunctionFragment;
     "approve(address,uint256)": FunctionFragment;
     "balanceOf(address)": FunctionFragment;
@@ -49,24 +48,19 @@ export interface TokenInterface extends utils.Interface {
     "pause()": FunctionFragment;
     "paused()": FunctionFragment;
     "peg()": FunctionFragment;
-    "refunds(address)": FunctionFragment;
-    "reimbursementFee()": FunctionFragment;
     "renounceRole(bytes32,address)": FunctionFragment;
     "revokeRole(bytes32,address)": FunctionFragment;
-    "setReimbursementFee(uint256)": FunctionFragment;
     "supportsInterface(bytes4)": FunctionFragment;
     "symbol()": FunctionFragment;
     "totalSupply()": FunctionFragment;
     "transfer(address,uint256)": FunctionFragment;
     "transferFrom(address,address,uint256)": FunctionFragment;
     "unpause()": FunctionFragment;
-    "withdraw()": FunctionFragment;
   };
 
   getFunction(
     nameOrSignatureOrTopic:
       | "DEFAULT_ADMIN_ROLE"
-      | "adminFeesWithdrawal"
       | "allowance"
       | "approve"
       | "balanceOf"
@@ -85,27 +79,19 @@ export interface TokenInterface extends utils.Interface {
       | "pause"
       | "paused"
       | "peg"
-      | "refunds"
-      | "reimbursementFee"
       | "renounceRole"
       | "revokeRole"
-      | "setReimbursementFee"
       | "supportsInterface"
       | "symbol"
       | "totalSupply"
       | "transfer"
       | "transferFrom"
       | "unpause"
-      | "withdraw"
   ): FunctionFragment;
 
   encodeFunctionData(
     functionFragment: "DEFAULT_ADMIN_ROLE",
     values?: undefined
-  ): string;
-  encodeFunctionData(
-    functionFragment: "adminFeesWithdrawal",
-    values: [PromiseOrValue<string>]
   ): string;
   encodeFunctionData(
     functionFragment: "allowance",
@@ -159,24 +145,12 @@ export interface TokenInterface extends utils.Interface {
   encodeFunctionData(functionFragment: "paused", values?: undefined): string;
   encodeFunctionData(functionFragment: "peg", values?: undefined): string;
   encodeFunctionData(
-    functionFragment: "refunds",
-    values: [PromiseOrValue<string>]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "reimbursementFee",
-    values?: undefined
-  ): string;
-  encodeFunctionData(
     functionFragment: "renounceRole",
     values: [PromiseOrValue<BytesLike>, PromiseOrValue<string>]
   ): string;
   encodeFunctionData(
     functionFragment: "revokeRole",
     values: [PromiseOrValue<BytesLike>, PromiseOrValue<string>]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "setReimbursementFee",
-    values: [PromiseOrValue<BigNumberish>]
   ): string;
   encodeFunctionData(
     functionFragment: "supportsInterface",
@@ -200,14 +174,9 @@ export interface TokenInterface extends utils.Interface {
     ]
   ): string;
   encodeFunctionData(functionFragment: "unpause", values?: undefined): string;
-  encodeFunctionData(functionFragment: "withdraw", values?: undefined): string;
 
   decodeFunctionResult(
     functionFragment: "DEFAULT_ADMIN_ROLE",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "adminFeesWithdrawal",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "allowance", data: BytesLike): Result;
@@ -237,20 +206,11 @@ export interface TokenInterface extends utils.Interface {
   decodeFunctionResult(functionFragment: "pause", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "paused", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "peg", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "refunds", data: BytesLike): Result;
-  decodeFunctionResult(
-    functionFragment: "reimbursementFee",
-    data: BytesLike
-  ): Result;
   decodeFunctionResult(
     functionFragment: "renounceRole",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "revokeRole", data: BytesLike): Result;
-  decodeFunctionResult(
-    functionFragment: "setReimbursementFee",
-    data: BytesLike
-  ): Result;
   decodeFunctionResult(
     functionFragment: "supportsInterface",
     data: BytesLike
@@ -266,43 +226,25 @@ export interface TokenInterface extends utils.Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "unpause", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "withdraw", data: BytesLike): Result;
 
   events: {
-    "AdminWithdrawal(address,uint256)": EventFragment;
     "Approval(address,address,uint256)": EventFragment;
     "Paused(address)": EventFragment;
     "RoleAdminChanged(bytes32,bytes32,bytes32)": EventFragment;
     "RoleGranted(bytes32,address,address)": EventFragment;
     "RoleRevoked(bytes32,address,address)": EventFragment;
-    "Stored(address,uint256)": EventFragment;
     "Transfer(address,address,uint256)": EventFragment;
     "Unpaused(address)": EventFragment;
-    "WithdrawnForFee(address,uint256,uint256)": EventFragment;
   };
 
-  getEvent(nameOrSignatureOrTopic: "AdminWithdrawal"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "Approval"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "Paused"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "RoleAdminChanged"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "RoleGranted"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "RoleRevoked"): EventFragment;
-  getEvent(nameOrSignatureOrTopic: "Stored"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "Transfer"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "Unpaused"): EventFragment;
-  getEvent(nameOrSignatureOrTopic: "WithdrawnForFee"): EventFragment;
 }
-
-export interface AdminWithdrawalEventObject {
-  recipient: string;
-  amount: BigNumber;
-}
-export type AdminWithdrawalEvent = TypedEvent<
-  [string, BigNumber],
-  AdminWithdrawalEventObject
->;
-
-export type AdminWithdrawalEventFilter = TypedEventFilter<AdminWithdrawalEvent>;
 
 export interface ApprovalEventObject {
   owner: string;
@@ -360,14 +302,6 @@ export type RoleRevokedEvent = TypedEvent<
 
 export type RoleRevokedEventFilter = TypedEventFilter<RoleRevokedEvent>;
 
-export interface StoredEventObject {
-  addr: string;
-  amount: BigNumber;
-}
-export type StoredEvent = TypedEvent<[string, BigNumber], StoredEventObject>;
-
-export type StoredEventFilter = TypedEventFilter<StoredEvent>;
-
 export interface TransferEventObject {
   from: string;
   to: string;
@@ -386,18 +320,6 @@ export interface UnpausedEventObject {
 export type UnpausedEvent = TypedEvent<[string], UnpausedEventObject>;
 
 export type UnpausedEventFilter = TypedEventFilter<UnpausedEvent>;
-
-export interface WithdrawnForFeeEventObject {
-  addr: string;
-  amount: BigNumber;
-  fee: BigNumber;
-}
-export type WithdrawnForFeeEvent = TypedEvent<
-  [string, BigNumber, BigNumber],
-  WithdrawnForFeeEventObject
->;
-
-export type WithdrawnForFeeEventFilter = TypedEventFilter<WithdrawnForFeeEvent>;
 
 export interface Token extends BaseContract {
   connect(signerOrProvider: Signer | Provider | string): this;
@@ -427,11 +349,6 @@ export interface Token extends BaseContract {
 
   functions: {
     DEFAULT_ADMIN_ROLE(overrides?: CallOverrides): Promise<[string]>;
-
-    adminFeesWithdrawal(
-      recipient: PromiseOrValue<string>,
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
-    ): Promise<ContractTransaction>;
 
     allowance(
       owner: PromiseOrValue<string>,
@@ -511,13 +428,6 @@ export interface Token extends BaseContract {
 
     peg(overrides?: CallOverrides): Promise<[string]>;
 
-    refunds(
-      sender: PromiseOrValue<string>,
-      overrides?: CallOverrides
-    ): Promise<[BigNumber] & { amount: BigNumber }>;
-
-    reimbursementFee(overrides?: CallOverrides): Promise<[BigNumber]>;
-
     renounceRole(
       role: PromiseOrValue<BytesLike>,
       account: PromiseOrValue<string>,
@@ -527,11 +437,6 @@ export interface Token extends BaseContract {
     revokeRole(
       role: PromiseOrValue<BytesLike>,
       account: PromiseOrValue<string>,
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
-    ): Promise<ContractTransaction>;
-
-    setReimbursementFee(
-      _reimbursementFee: PromiseOrValue<BigNumberish>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<ContractTransaction>;
 
@@ -560,18 +465,9 @@ export interface Token extends BaseContract {
     unpause(
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<ContractTransaction>;
-
-    withdraw(
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
-    ): Promise<ContractTransaction>;
   };
 
   DEFAULT_ADMIN_ROLE(overrides?: CallOverrides): Promise<string>;
-
-  adminFeesWithdrawal(
-    recipient: PromiseOrValue<string>,
-    overrides?: Overrides & { from?: PromiseOrValue<string> }
-  ): Promise<ContractTransaction>;
 
   allowance(
     owner: PromiseOrValue<string>,
@@ -651,13 +547,6 @@ export interface Token extends BaseContract {
 
   peg(overrides?: CallOverrides): Promise<string>;
 
-  refunds(
-    sender: PromiseOrValue<string>,
-    overrides?: CallOverrides
-  ): Promise<BigNumber>;
-
-  reimbursementFee(overrides?: CallOverrides): Promise<BigNumber>;
-
   renounceRole(
     role: PromiseOrValue<BytesLike>,
     account: PromiseOrValue<string>,
@@ -667,11 +556,6 @@ export interface Token extends BaseContract {
   revokeRole(
     role: PromiseOrValue<BytesLike>,
     account: PromiseOrValue<string>,
-    overrides?: Overrides & { from?: PromiseOrValue<string> }
-  ): Promise<ContractTransaction>;
-
-  setReimbursementFee(
-    _reimbursementFee: PromiseOrValue<BigNumberish>,
     overrides?: Overrides & { from?: PromiseOrValue<string> }
   ): Promise<ContractTransaction>;
 
@@ -701,17 +585,8 @@ export interface Token extends BaseContract {
     overrides?: Overrides & { from?: PromiseOrValue<string> }
   ): Promise<ContractTransaction>;
 
-  withdraw(
-    overrides?: Overrides & { from?: PromiseOrValue<string> }
-  ): Promise<ContractTransaction>;
-
   callStatic: {
     DEFAULT_ADMIN_ROLE(overrides?: CallOverrides): Promise<string>;
-
-    adminFeesWithdrawal(
-      recipient: PromiseOrValue<string>,
-      overrides?: CallOverrides
-    ): Promise<void>;
 
     allowance(
       owner: PromiseOrValue<string>,
@@ -789,13 +664,6 @@ export interface Token extends BaseContract {
 
     peg(overrides?: CallOverrides): Promise<string>;
 
-    refunds(
-      sender: PromiseOrValue<string>,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
-
-    reimbursementFee(overrides?: CallOverrides): Promise<BigNumber>;
-
     renounceRole(
       role: PromiseOrValue<BytesLike>,
       account: PromiseOrValue<string>,
@@ -805,11 +673,6 @@ export interface Token extends BaseContract {
     revokeRole(
       role: PromiseOrValue<BytesLike>,
       account: PromiseOrValue<string>,
-      overrides?: CallOverrides
-    ): Promise<void>;
-
-    setReimbursementFee(
-      _reimbursementFee: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
     ): Promise<void>;
 
@@ -836,20 +699,9 @@ export interface Token extends BaseContract {
     ): Promise<boolean>;
 
     unpause(overrides?: CallOverrides): Promise<void>;
-
-    withdraw(overrides?: CallOverrides): Promise<void>;
   };
 
   filters: {
-    "AdminWithdrawal(address,uint256)"(
-      recipient?: PromiseOrValue<string> | null,
-      amount?: null
-    ): AdminWithdrawalEventFilter;
-    AdminWithdrawal(
-      recipient?: PromiseOrValue<string> | null,
-      amount?: null
-    ): AdminWithdrawalEventFilter;
-
     "Approval(address,address,uint256)"(
       owner?: PromiseOrValue<string> | null,
       spender?: PromiseOrValue<string> | null,
@@ -897,15 +749,6 @@ export interface Token extends BaseContract {
       sender?: PromiseOrValue<string> | null
     ): RoleRevokedEventFilter;
 
-    "Stored(address,uint256)"(
-      addr?: PromiseOrValue<string> | null,
-      amount?: null
-    ): StoredEventFilter;
-    Stored(
-      addr?: PromiseOrValue<string> | null,
-      amount?: null
-    ): StoredEventFilter;
-
     "Transfer(address,address,uint256)"(
       from?: PromiseOrValue<string> | null,
       to?: PromiseOrValue<string> | null,
@@ -919,26 +762,10 @@ export interface Token extends BaseContract {
 
     "Unpaused(address)"(account?: null): UnpausedEventFilter;
     Unpaused(account?: null): UnpausedEventFilter;
-
-    "WithdrawnForFee(address,uint256,uint256)"(
-      addr?: PromiseOrValue<string> | null,
-      amount?: null,
-      fee?: null
-    ): WithdrawnForFeeEventFilter;
-    WithdrawnForFee(
-      addr?: PromiseOrValue<string> | null,
-      amount?: null,
-      fee?: null
-    ): WithdrawnForFeeEventFilter;
   };
 
   estimateGas: {
     DEFAULT_ADMIN_ROLE(overrides?: CallOverrides): Promise<BigNumber>;
-
-    adminFeesWithdrawal(
-      recipient: PromiseOrValue<string>,
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
-    ): Promise<BigNumber>;
 
     allowance(
       owner: PromiseOrValue<string>,
@@ -1018,13 +845,6 @@ export interface Token extends BaseContract {
 
     peg(overrides?: CallOverrides): Promise<BigNumber>;
 
-    refunds(
-      sender: PromiseOrValue<string>,
-      overrides?: CallOverrides
-    ): Promise<BigNumber>;
-
-    reimbursementFee(overrides?: CallOverrides): Promise<BigNumber>;
-
     renounceRole(
       role: PromiseOrValue<BytesLike>,
       account: PromiseOrValue<string>,
@@ -1034,11 +854,6 @@ export interface Token extends BaseContract {
     revokeRole(
       role: PromiseOrValue<BytesLike>,
       account: PromiseOrValue<string>,
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
-    ): Promise<BigNumber>;
-
-    setReimbursementFee(
-      _reimbursementFee: PromiseOrValue<BigNumberish>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<BigNumber>;
 
@@ -1067,20 +882,11 @@ export interface Token extends BaseContract {
     unpause(
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<BigNumber>;
-
-    withdraw(
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
-    ): Promise<BigNumber>;
   };
 
   populateTransaction: {
     DEFAULT_ADMIN_ROLE(
       overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
-
-    adminFeesWithdrawal(
-      recipient: PromiseOrValue<string>,
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<PopulatedTransaction>;
 
     allowance(
@@ -1161,13 +967,6 @@ export interface Token extends BaseContract {
 
     peg(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
-    refunds(
-      sender: PromiseOrValue<string>,
-      overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
-
-    reimbursementFee(overrides?: CallOverrides): Promise<PopulatedTransaction>;
-
     renounceRole(
       role: PromiseOrValue<BytesLike>,
       account: PromiseOrValue<string>,
@@ -1177,11 +976,6 @@ export interface Token extends BaseContract {
     revokeRole(
       role: PromiseOrValue<BytesLike>,
       account: PromiseOrValue<string>,
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
-    ): Promise<PopulatedTransaction>;
-
-    setReimbursementFee(
-      _reimbursementFee: PromiseOrValue<BigNumberish>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<PopulatedTransaction>;
 
@@ -1208,10 +1002,6 @@ export interface Token extends BaseContract {
     ): Promise<PopulatedTransaction>;
 
     unpause(
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
-    ): Promise<PopulatedTransaction>;
-
-    withdraw(
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<PopulatedTransaction>;
   };

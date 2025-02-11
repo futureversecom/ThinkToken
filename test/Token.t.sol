@@ -17,8 +17,8 @@ contract ThinkTokenTest is Test {
     address user;
     address peg;
 
-    uint256 constant INITIAL_SUPPLY = 1_000_000_000e6;
-    uint256 constant TEST_AMOUNT = 100e6;
+    uint256 constant INITIAL_SUPPLY = 1_000_000_000 ether;
+    uint256 constant TEST_AMOUNT = 100 ether;
 
     event Deposited(address indexed addr, uint256 amount);
     event WithdrawnForFee(address indexed addr, uint256 amount, uint256 fee);
@@ -47,12 +47,7 @@ contract ThinkTokenTest is Test {
         peg = address(0x123);
         vm.label(peg, "peg");
 
-        token = new Token(
-            rolesManager,
-            tokenManager,
-            recoveryManager,
-            multisig
-        );
+        token = new Token(rolesManager, tokenManager, multisig);
 
         // Initialize the token
         vm.prank(tokenManager);
@@ -176,12 +171,7 @@ contract ThinkTokenTest is Test {
 
     function test_initialization_zero_address() public {
         // Create new token without initialization
-        token = new Token(
-            rolesManager,
-            tokenManager,
-            recoveryManager,
-            multisig
-        );
+        token = new Token(rolesManager, tokenManager, multisig);
 
         vm.prank(tokenManager);
         vm.expectRevert("Invalid peg address");
@@ -246,39 +236,7 @@ contract ThinkTokenTest is Test {
     }
 
     function test_decimals() public {
-        assertEq(token.decimals(), 6, "Token should have 6 decimals");
-    }
-
-    function test_token_recovery() public {
-        uint256 transferAmount = TEST_AMOUNT;
-        uint256 fee = (transferAmount * 10) / 100;
-        uint256 refund = transferAmount - fee;
-
-        // Transfer tokens to contract
-        vm.startPrank(user);
-        token.approve(address(token), transferAmount);
-        token.transfer(address(token), transferAmount);
-
-        // Verify deposit state
-        assertEq(token.refunds(user), refund, "Refund amount incorrect");
-        assertEq(token.balanceOf(user), 0, "User balance should be 0");
-        assertEq(
-            token.balanceOf(address(token)),
-            transferAmount,
-            "Token balance should be TEST_AMOUNT"
-        );
-        assertEq(token.fees(), fee, "Fee amount incorrect");
-
-        // Test withdrawal
-        vm.expectEmit(true, true, false, true, address(token));
-        emit WithdrawnForFee(user, refund, 10);
-        token.withdraw();
-        vm.stopPrank();
-
-        // Verify final state
-        assertEq(token.balanceOf(user), refund);
-        assertEq(token.balanceOf(address(token)), fee);
-        assertEq(token.refunds(user), 0);
+        assertEq(token.decimals(), DECIMALS, "Token should have 18 decimals");
     }
 
     function test_mint_functionality() public {
@@ -296,71 +254,6 @@ contract ThinkTokenTest is Test {
         vm.prank(multisig);
         vm.expectRevert("ERC20Capped: cap exceeded");
         token.mint(recipient, 1);
-    }
-
-    function test_fee_configuration() public {
-        uint256 newFee = 20;
-
-        // Test unauthorized fee change
-        vm.prank(user);
-        vm.expectRevert(
-            _getAccessControlRevertMessage(user, TOKEN_RECOVERY_ROLE)
-        );
-        token.setReimbursementFee(newFee);
-
-        // Test authorized fee change
-        vm.prank(recoveryManager);
-        token.setReimbursementFee(newFee);
-        assertEq(token.reimbursementFee(), newFee);
-
-        // Test invalid fee percentage
-        vm.prank(recoveryManager);
-        vm.expectRevert("Invalid fee percentage");
-        token.setReimbursementFee(101);
-    }
-
-    function test_admin_fee_withdrawal() public {
-        uint256 transferAmount = TEST_AMOUNT;
-        uint256 expectedFee = (transferAmount * 10) / 100;
-        uint256 initialMultisigBalance = token.balanceOf(multisig);
-
-        // Setup fees by transferring to contract
-        vm.startPrank(user);
-        token.approve(address(token), transferAmount);
-        token.transfer(address(token), transferAmount);
-        vm.stopPrank();
-
-        // Verify contract balance and fees
-        assertEq(token.balanceOf(address(token)), transferAmount);
-        assertEq(token.fees(), expectedFee);
-
-        // Admin withdraws fees
-        vm.prank(users[2]); // recoveryManager
-        token.adminFeesWithdrawal(multisig);
-
-        // Verify balances after withdrawal
-        assertEq(
-            token.balanceOf(multisig),
-            initialMultisigBalance + expectedFee
-        );
-        assertEq(token.fees(), 0);
-        assertEq(token.balanceOf(address(token)), transferAmount - expectedFee);
-    }
-
-    function test_transfer_to_contract() public {
-        uint256 transferAmount = TEST_AMOUNT;
-        uint256 expectedFee = (transferAmount * 10) / 100;
-
-        assertEq(token.balanceOf(user), transferAmount);
-
-        vm.startPrank(user);
-        token.approve(address(token), transferAmount);
-        token.transfer(address(token), transferAmount);
-        vm.stopPrank();
-
-        assertEq(token.refunds(user), transferAmount - expectedFee);
-        assertEq(token.fees(), expectedFee);
-        assertEq(token.balanceOf(address(token)), transferAmount);
     }
 
     function test_receive_ether_reverts() public {
@@ -392,5 +285,16 @@ contract ThinkTokenTest is Test {
         vm.prank(user);
         token.transfer(recipient, 0); // Should not revert
         assertEq(token.balanceOf(recipient), 0);
+    }
+
+    function test_direct_token_transfer_to_peg() public {
+        address to = makeAddr("to");
+
+        vm.prank(user);
+        token.transfer(to, TEST_AMOUNT / 2); // Test valid transfer
+
+        vm.prank(user);
+        vm.expectRevert("Use deposit() to transfer to contract");
+        token.transfer(address(peg), TEST_AMOUNT); // Test invalid transfer
     }
 }

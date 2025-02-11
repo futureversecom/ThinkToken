@@ -72,7 +72,7 @@ const config: HardhatUserConfig = {
       url: SEPOLIA_RPC_URL,
       accounts: devAccounts,
       timeout: 120000,
-      chainId: 5
+      chainId: 11155111
     },
     porcini: {
       url: PORCINI_RPC_URL,
@@ -84,22 +84,22 @@ const config: HardhatUserConfig = {
       accounts: mainAccounts
     }
   },
-  // etherscan: {
-  //   apiKey: {
-  //     sepolia: ETHERSCAN_API_KEY,
-  //     porcini: ETHERSCAN_API_KEY
-  //   },
-  //   customChains: [
-  //     {
-  //       network: "porcini",
-  //       chainId: 7672,
-  //       urls: {
-  //         apiURL: "https://sourcify.dev/server",
-  //         browserURL: "https://repo.sourcify.dev"
-  //       }
-  //     }
-  //   ]
-  // },
+  etherscan: {
+    apiKey: {
+      sepolia: ETHERSCAN_API_KEY,
+      porcini: ETHERSCAN_API_KEY
+    },
+    customChains: [
+      {
+        network: "porcini",
+        chainId: 7672,
+        urls: {
+          apiURL: "https://sourcify.dev/server",
+          browserURL: "https://repo.sourcify.dev"
+        }
+      }
+    ]
+  },
   sourcify: {
     enabled: true,
     // Optional: specify a different Sourcify server

@@ -30,6 +30,8 @@ export type { IERC165 } from "./@openzeppelin/contracts/utils/introspection/IERC
 export { IERC165__factory } from "./factories/@openzeppelin/contracts/utils/introspection/IERC165__factory";
 export type { Bridge } from "./contracts/Bridge";
 export { Bridge__factory } from "./factories/contracts/Bridge__factory";
+export type { ERC20Peg } from "./contracts/ERC20Peg";
+export { ERC20Peg__factory } from "./factories/contracts/ERC20Peg__factory";
 export type { IBridge } from "./contracts/IBridge.sol/IBridge";
 export { IBridge__factory } from "./factories/contracts/IBridge.sol/IBridge__factory";
 export type { IBridgeReceiver } from "./contracts/IBridge.sol/IBridgeReceiver";
