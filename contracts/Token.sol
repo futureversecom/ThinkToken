@@ -20,7 +20,7 @@ string constant SYMBOL = "THINK";
  */
 contract Token is AccessControl, ReentrancyGuard, ERC20Capped, Pausable {
     bool private _initialized;
-    ERC20Peg public peg;
+    address public peg;
 
     constructor(
         address rolesManager,
@@ -41,7 +41,7 @@ contract Token is AccessControl, ReentrancyGuard, ERC20Capped, Pausable {
         require(_peg != address(0), "Invalid peg address");
 
         _mint(_peg, TOTAL_SUPPLY);
-        peg = ERC20Peg(_peg);
+        peg = _peg;
         _initialized = true;
     }
 
@@ -77,7 +77,7 @@ contract Token is AccessControl, ReentrancyGuard, ERC20Capped, Pausable {
     }
 
     function setPeg(address _peg) external onlyRole(MANAGER_ROLE) {
-        peg = ERC20Peg(_peg);
+        peg = address(_peg);
     }
 
     function pause() external onlyRole(MANAGER_ROLE) {
