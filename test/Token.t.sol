@@ -98,7 +98,7 @@ contract ThinkTokenTest is Test {
 
         // Test transfer while paused
         vm.prank(user);
-        vm.expectRevert("Token transfers are paused");
+        vm.expectRevert("Pausable: paused");
         token.transfer(recipient, TEST_AMOUNT / 2);
         assertEq(
             token.balanceOf(user),
@@ -222,7 +222,7 @@ contract ThinkTokenTest is Test {
         vm.startPrank(user);
         address recipient = makeAddr("recipient");
 
-        vm.expectRevert("Token transfers are paused");
+        vm.expectRevert("Pausable: paused");
         token.transfer(recipient, TEST_AMOUNT / 2);
 
         // Approve should work even when paused
@@ -231,7 +231,7 @@ contract ThinkTokenTest is Test {
         // Setup allowance for transferFrom
         vm.stopPrank();
         vm.prank(recipient);
-        vm.expectRevert("Token transfers are paused");
+        vm.expectRevert("Pausable: paused");
         token.transferFrom(user, recipient, TEST_AMOUNT);
     }
 
@@ -294,7 +294,7 @@ contract ThinkTokenTest is Test {
         token.transfer(to, TEST_AMOUNT / 2); // Test valid transfer
 
         vm.prank(user);
-        vm.expectRevert("Use deposit() to transfer to contract");
+        vm.expectRevert("Use deposit() instead of direct transfer");
         token.transfer(address(peg), TEST_AMOUNT); // Test invalid transfer
     }
 }

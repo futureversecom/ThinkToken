@@ -20,7 +20,6 @@ string constant SYMBOL = "THINK";
  */
 contract Token is AccessControl, ReentrancyGuard, ERC20Capped, Pausable {
     bool private _initialized;
-    uint256 public fees;
     ERC20Peg public peg;
 
     constructor(
@@ -65,18 +64,20 @@ contract Token is AccessControl, ReentrancyGuard, ERC20Capped, Pausable {
         address,
         address to,
         uint256
-    ) internal view override {
-        require(!paused(), "Token transfers are paused");
+    ) internal view override whenNotPaused {
         require(to != address(this), "Invalid recipient address");
-
-        uint256 size;
-        assembly {
-            size := extcodesize(caller())
+        if (to == address(peg)) {
+            // check if the caller is a contract, and not a user
+            uint256 size;
+            assembly {
+                size := extcodesize(caller())
+            }
+            require(size > 0, "Use deposit() instead of direct transfer");
         }
-        bool isContractCall = size > 0;
-        bool userTransfersToPeg = to == address(peg) && !isContractCall;
+    }
 
-        require(!userTransfersToPeg, "Use deposit() to transfer to contract");
+    function setPeg(address _peg) external onlyRole(MANAGER_ROLE) {
+        peg = ERC20Peg(_peg);
     }
 
     function pause() external onlyRole(MANAGER_ROLE) {
