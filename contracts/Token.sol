@@ -22,6 +22,9 @@ contract Token is AccessControl, ReentrancyGuard, ERC20Capped, Pausable {
     bool private _initialized;
     address public peg;
 
+    error InvalidRecipientAddress();
+    error UseDepositInsteadOfTransfer();
+
     constructor(
         address rolesManager,
         address tokenManager,
@@ -65,14 +68,18 @@ contract Token is AccessControl, ReentrancyGuard, ERC20Capped, Pausable {
         address to,
         uint256
     ) internal view override whenNotPaused {
-        require(to != address(this), "Invalid recipient address");
+        if (to == address(this)) {
+            revert InvalidRecipientAddress();
+        }
         if (to == address(peg)) {
             // check if the caller is a contract, and not a user
             uint256 size;
             assembly {
                 size := extcodesize(caller())
             }
-            require(size > 0, "Use deposit() instead of direct transfer");
+            if (size > 0) {
+                revert UseDepositInsteadOfTransfer();
+            }
         }
     }
 
