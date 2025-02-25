@@ -7,7 +7,7 @@ import "forge-std/Test.sol";
 import "@openzeppelin/lib/forge-std/src/Test.sol";
 import "../contracts/Roles.sol";
 
-contract ThinkTokenTest is Test {
+contract TokenTest is Test {
     Token token;
     address[] users;
     address rolesManager;
@@ -164,7 +164,7 @@ contract ThinkTokenTest is Test {
     function test_double_initialization() public {
         vm.startPrank(tokenManager);
         address newPeg = makeAddr("newPeg");
-        vm.expectRevert("Already initialized");
+        vm.expectRevert(Token.AlreadyInitialized.selector);
         token.init(newPeg);
         vm.stopPrank();
     }
@@ -174,7 +174,7 @@ contract ThinkTokenTest is Test {
         token = new Token(rolesManager, tokenManager, multisig);
 
         vm.prank(tokenManager);
-        vm.expectRevert("Invalid peg address");
+        vm.expectRevert(Token.InvalidAddress.selector);
         token.init(address(0));
     }
 
@@ -294,7 +294,7 @@ contract ThinkTokenTest is Test {
         token.transfer(to, TEST_AMOUNT / 2); // Test valid transfer
 
         vm.prank(user);
-        vm.expectRevert("Use deposit() instead of direct transfer");
+        vm.expectRevert(Token.UseDepositInsteadOfTransfer.selector);
         token.transfer(address(peg), TEST_AMOUNT); // Test invalid transfer
     }
 }

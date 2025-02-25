@@ -22,6 +22,10 @@ contract Token is AccessControl, ReentrancyGuard, ERC20Capped, Pausable {
     bool private _initialized;
     address public peg;
 
+    error InvalidAddress();
+    error AlreadyInitialized();
+    error UseDepositInsteadOfTransfer();
+
     constructor(
         address rolesManager,
         address tokenManager,
@@ -37,8 +41,12 @@ contract Token is AccessControl, ReentrancyGuard, ERC20Capped, Pausable {
     }
 
     function init(address _peg) external onlyRole(MANAGER_ROLE) {
-        require(!_initialized, "Already initialized");
-        require(_peg != address(0), "Invalid peg address");
+        if (_initialized) {
+            revert AlreadyInitialized();
+        }
+        if (_peg == address(0)) {
+            revert InvalidAddress();
+        }
 
         _mint(_peg, TOTAL_SUPPLY);
         peg = _peg;
@@ -65,18 +73,25 @@ contract Token is AccessControl, ReentrancyGuard, ERC20Capped, Pausable {
         address to,
         uint256
     ) internal view override whenNotPaused {
-        require(to != address(this), "Invalid recipient address");
+        if (to == address(this)) {
+            revert InvalidAddress();
+        }
         if (to == address(peg)) {
             // check if the caller is a contract, and not a user
             uint256 size;
             assembly {
                 size := extcodesize(caller())
             }
-            require(size > 0, "Use deposit() instead of direct transfer");
+            if (size == 0) {
+                revert UseDepositInsteadOfTransfer();
+            }
         }
     }
 
     function setPeg(address _peg) external onlyRole(MANAGER_ROLE) {
+        if (_peg == address(0)) {
+            revert InvalidAddress();
+        }
         peg = address(_peg);
     }
 
