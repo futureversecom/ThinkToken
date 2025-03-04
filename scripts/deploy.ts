@@ -55,10 +55,19 @@ async function main() {
 
   // Setup phase
 
-  // Initialize token with peg address (token manager)
-  const tokenManagerSigner = new ethers.Wallet(tokenManagerPk, ethers.provider);
-  await token.connect(tokenManagerSigner).init(pegAddress);
-  console.log("Token initialized with peg address:", peg.address);
+  // Initialize token with peg address (token manager) - with proper error handling
+  try {
+    const tokenManagerSigner = new ethers.Wallet(
+      tokenManagerPk,
+      ethers.provider
+    );
+    const tx = await token.connect(tokenManagerSigner).init(pegAddress);
+    await tx.wait();
+    console.log("Token initialized with peg address:", pegAddress);
+  } catch (error) {
+    console.error("Error initializing token:", error);
+    throw error;
+  }
 
   console.log("\nDeployment Complete");
   console.log("Token:", token.address);

@@ -80,7 +80,11 @@ interface IAccessControl {
      *
      * _Available since v3.1._
      */
-    event RoleAdminChanged(bytes32 indexed role, bytes32 indexed previousAdminRole, bytes32 indexed newAdminRole);
+    event RoleAdminChanged(
+        bytes32 indexed role,
+        bytes32 indexed previousAdminRole,
+        bytes32 indexed newAdminRole
+    );
 
     /**
      * @dev Emitted when `account` is granted `role`.
@@ -88,7 +92,11 @@ interface IAccessControl {
      * `sender` is the account that originated the contract call, an admin role
      * bearer except when using {AccessControl-_setupRole}.
      */
-    event RoleGranted(bytes32 indexed role, address indexed account, address indexed sender);
+    event RoleGranted(
+        bytes32 indexed role,
+        address indexed account,
+        address indexed sender
+    );
 
     /**
      * @dev Emitted when `account` is revoked `role`.
@@ -97,12 +105,19 @@ interface IAccessControl {
      *   - if using `revokeRole`, it is the admin role bearer
      *   - if using `renounceRole`, it is the role bearer (i.e. `account`)
      */
-    event RoleRevoked(bytes32 indexed role, address indexed account, address indexed sender);
+    event RoleRevoked(
+        bytes32 indexed role,
+        address indexed account,
+        address indexed sender
+    );
 
     /**
      * @dev Returns `true` if `account` has been granted `role`.
      */
-    function hasRole(bytes32 role, address account) external view returns (bool);
+    function hasRole(
+        bytes32 role,
+        address account
+    ) external view returns (bool);
 
     /**
      * @dev Returns the admin role that controls `role`. See {grantRole} and
@@ -249,7 +264,11 @@ interface IERC20 {
      * @dev Emitted when the allowance of a `spender` for an `owner` is set by
      * a call to {approve}. `value` is the new allowance.
      */
-    event Approval(address indexed owner, address indexed spender, uint256 value);
+    event Approval(
+        address indexed owner,
+        address indexed spender,
+        uint256 value
+    );
 
     /**
      * @dev Returns the amount of tokens in existence.
@@ -277,7 +296,10 @@ interface IERC20 {
      *
      * This value changes when {approve} or {transferFrom} are called.
      */
-    function allowance(address owner, address spender) external view returns (uint256);
+    function allowance(
+        address owner,
+        address spender
+    ) external view returns (uint256);
 
     /**
      * @dev Sets `amount` as the allowance of `spender` over the caller's tokens.
@@ -304,7 +326,11 @@ interface IERC20 {
      *
      * Emits a {Transfer} event.
      */
-    function transferFrom(address from, address to, uint256 amount) external returns (bool);
+    function transferFrom(
+        address from,
+        address to,
+        uint256 amount
+    ) external returns (bool);
 }
 
 // lib/openzeppelin-contracts/contracts/token/ERC20/extensions/IERC20Permit.sol
@@ -430,10 +456,16 @@ library Address {
      * https://solidity.readthedocs.io/en/v0.8.0/security-considerations.html#use-the-checks-effects-interactions-pattern[checks-effects-interactions pattern].
      */
     function sendValue(address payable recipient, uint256 amount) internal {
-        require(address(this).balance >= amount, "Address: insufficient balance");
+        require(
+            address(this).balance >= amount,
+            "Address: insufficient balance"
+        );
 
         (bool success, ) = recipient.call{value: amount}("");
-        require(success, "Address: unable to send value, recipient may have reverted");
+        require(
+            success,
+            "Address: unable to send value, recipient may have reverted"
+        );
     }
 
     /**
@@ -454,8 +486,17 @@ library Address {
      *
      * _Available since v3.1._
      */
-    function functionCall(address target, bytes memory data) internal returns (bytes memory) {
-        return functionCallWithValue(target, data, 0, "Address: low-level call failed");
+    function functionCall(
+        address target,
+        bytes memory data
+    ) internal returns (bytes memory) {
+        return
+            functionCallWithValue(
+                target,
+                data,
+                0,
+                "Address: low-level call failed"
+            );
     }
 
     /**
@@ -483,8 +524,18 @@ library Address {
      *
      * _Available since v3.1._
      */
-    function functionCallWithValue(address target, bytes memory data, uint256 value) internal returns (bytes memory) {
-        return functionCallWithValue(target, data, value, "Address: low-level call with value failed");
+    function functionCallWithValue(
+        address target,
+        bytes memory data,
+        uint256 value
+    ) internal returns (bytes memory) {
+        return
+            functionCallWithValue(
+                target,
+                data,
+                value,
+                "Address: low-level call with value failed"
+            );
     }
 
     /**
@@ -499,9 +550,20 @@ library Address {
         uint256 value,
         string memory errorMessage
     ) internal returns (bytes memory) {
-        require(address(this).balance >= value, "Address: insufficient balance for call");
-        (bool success, bytes memory returndata) = target.call{value: value}(data);
-        return verifyCallResultFromTarget(target, success, returndata, errorMessage);
+        require(
+            address(this).balance >= value,
+            "Address: insufficient balance for call"
+        );
+        (bool success, bytes memory returndata) = target.call{value: value}(
+            data
+        );
+        return
+            verifyCallResultFromTarget(
+                target,
+                success,
+                returndata,
+                errorMessage
+            );
     }
 
     /**
@@ -510,8 +572,16 @@ library Address {
      *
      * _Available since v3.3._
      */
-    function functionStaticCall(address target, bytes memory data) internal view returns (bytes memory) {
-        return functionStaticCall(target, data, "Address: low-level static call failed");
+    function functionStaticCall(
+        address target,
+        bytes memory data
+    ) internal view returns (bytes memory) {
+        return
+            functionStaticCall(
+                target,
+                data,
+                "Address: low-level static call failed"
+            );
     }
 
     /**
@@ -526,7 +596,13 @@ library Address {
         string memory errorMessage
     ) internal view returns (bytes memory) {
         (bool success, bytes memory returndata) = target.staticcall(data);
-        return verifyCallResultFromTarget(target, success, returndata, errorMessage);
+        return
+            verifyCallResultFromTarget(
+                target,
+                success,
+                returndata,
+                errorMessage
+            );
     }
 
     /**
@@ -535,8 +611,16 @@ library Address {
      *
      * _Available since v3.4._
      */
-    function functionDelegateCall(address target, bytes memory data) internal returns (bytes memory) {
-        return functionDelegateCall(target, data, "Address: low-level delegate call failed");
+    function functionDelegateCall(
+        address target,
+        bytes memory data
+    ) internal returns (bytes memory) {
+        return
+            functionDelegateCall(
+                target,
+                data,
+                "Address: low-level delegate call failed"
+            );
     }
 
     /**
@@ -551,7 +635,13 @@ library Address {
         string memory errorMessage
     ) internal returns (bytes memory) {
         (bool success, bytes memory returndata) = target.delegatecall(data);
-        return verifyCallResultFromTarget(target, success, returndata, errorMessage);
+        return
+            verifyCallResultFromTarget(
+                target,
+                success,
+                returndata,
+                errorMessage
+            );
     }
 
     /**
@@ -596,7 +686,10 @@ library Address {
         }
     }
 
-    function _revert(bytes memory returndata, string memory errorMessage) private pure {
+    function _revert(
+        bytes memory returndata,
+        string memory errorMessage
+    ) private pure {
         // Look for revert reason and bubble it up if present
         if (returndata.length > 0) {
             // The easiest way to bubble the revert reason is using memory via assembly
@@ -713,7 +806,11 @@ library Math {
      * @dev Original credit to Remco Bloemen under MIT license (https://xn--2-umb.com/21/muldiv)
      * with further edits by Uniswap Labs also under MIT license.
      */
-    function mulDiv(uint256 x, uint256 y, uint256 denominator) internal pure returns (uint256 result) {
+    function mulDiv(
+        uint256 x,
+        uint256 y,
+        uint256 denominator
+    ) internal pure returns (uint256 result) {
         unchecked {
             // 512-bit multiply [prod1 prod0] = x * y. Compute the product mod 2^256 and mod 2^256 - 1, then use
             // use the Chinese Remainder Theorem to reconstruct the 512 bit result. The result is stored in two 256
@@ -797,7 +894,12 @@ library Math {
     /**
      * @notice Calculates x * y / denominator with full precision, following the selected rounding direction.
      */
-    function mulDiv(uint256 x, uint256 y, uint256 denominator, Rounding rounding) internal pure returns (uint256) {
+    function mulDiv(
+        uint256 x,
+        uint256 y,
+        uint256 denominator,
+        Rounding rounding
+    ) internal pure returns (uint256) {
         uint256 result = mulDiv(x, y, denominator);
         if (rounding == Rounding.Up && mulmod(x, y, denominator) > 0) {
             result += 1;
@@ -846,10 +948,15 @@ library Math {
     /**
      * @notice Calculates sqrt(a), following the selected rounding direction.
      */
-    function sqrt(uint256 a, Rounding rounding) internal pure returns (uint256) {
+    function sqrt(
+        uint256 a,
+        Rounding rounding
+    ) internal pure returns (uint256) {
         unchecked {
             uint256 result = sqrt(a);
-            return result + (rounding == Rounding.Up && result * result < a ? 1 : 0);
+            return
+                result +
+                (rounding == Rounding.Up && result * result < a ? 1 : 0);
         }
     }
 
@@ -899,10 +1006,15 @@ library Math {
      * @dev Return the log in base 2, following the selected rounding direction, of a positive value.
      * Returns 0 if given 0.
      */
-    function log2(uint256 value, Rounding rounding) internal pure returns (uint256) {
+    function log2(
+        uint256 value,
+        Rounding rounding
+    ) internal pure returns (uint256) {
         unchecked {
             uint256 result = log2(value);
-            return result + (rounding == Rounding.Up && 1 << result < value ? 1 : 0);
+            return
+                result +
+                (rounding == Rounding.Up && 1 << result < value ? 1 : 0);
         }
     }
 
@@ -948,10 +1060,15 @@ library Math {
      * @dev Return the log in base 10, following the selected rounding direction, of a positive value.
      * Returns 0 if given 0.
      */
-    function log10(uint256 value, Rounding rounding) internal pure returns (uint256) {
+    function log10(
+        uint256 value,
+        Rounding rounding
+    ) internal pure returns (uint256) {
         unchecked {
             uint256 result = log10(value);
-            return result + (rounding == Rounding.Up && 10 ** result < value ? 1 : 0);
+            return
+                result +
+                (rounding == Rounding.Up && 10 ** result < value ? 1 : 0);
         }
     }
 
@@ -991,10 +1108,15 @@ library Math {
      * @dev Return the log in base 256, following the selected rounding direction, of a positive value.
      * Returns 0 if given 0.
      */
-    function log256(uint256 value, Rounding rounding) internal pure returns (uint256) {
+    function log256(
+        uint256 value,
+        Rounding rounding
+    ) internal pure returns (uint256) {
         unchecked {
             uint256 result = log256(value);
-            return result + (rounding == Rounding.Up && 1 << (result << 3) < value ? 1 : 0);
+            return
+                result +
+                (rounding == Rounding.Up && 1 << (result << 3) < value ? 1 : 0);
         }
     }
 }
@@ -1061,7 +1183,10 @@ library SignedMath {
 abstract contract Ownable is Context {
     address private _owner;
 
-    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+    event OwnershipTransferred(
+        address indexed previousOwner,
+        address indexed newOwner
+    );
 
     /**
      * @dev Initializes the contract setting the deployer as the initial owner.
@@ -1108,7 +1233,10 @@ abstract contract Ownable is Context {
      * Can only be called by the current owner.
      */
     function transferOwnership(address newOwner) public virtual onlyOwner {
-        require(newOwner != address(0), "Ownable: new owner is the zero address");
+        require(
+            newOwner != address(0),
+            "Ownable: new owner is the zero address"
+        );
         _transferOwnership(newOwner);
     }
 
@@ -1274,7 +1402,9 @@ abstract contract ERC165 is IERC165 {
     /**
      * @dev See {IERC165-supportsInterface}.
      */
-    function supportsInterface(bytes4 interfaceId) public view virtual override returns (bool) {
+    function supportsInterface(
+        bytes4 interfaceId
+    ) public view virtual override returns (bool) {
         return interfaceId == type(IERC165).interfaceId;
     }
 }
@@ -1319,7 +1449,13 @@ library Strings {
      * @dev Converts a `int256` to its ASCII `string` decimal representation.
      */
     function toString(int256 value) internal pure returns (string memory) {
-        return string(abi.encodePacked(value < 0 ? "-" : "", toString(SignedMath.abs(value))));
+        return
+            string(
+                abi.encodePacked(
+                    value < 0 ? "-" : "",
+                    toString(SignedMath.abs(value))
+                )
+            );
     }
 
     /**
@@ -1334,7 +1470,10 @@ library Strings {
     /**
      * @dev Converts a `uint256` to its ASCII `string` hexadecimal representation with fixed length.
      */
-    function toHexString(uint256 value, uint256 length) internal pure returns (string memory) {
+    function toHexString(
+        uint256 value,
+        uint256 length
+    ) internal pure returns (string memory) {
         bytes memory buffer = new bytes(2 * length + 2);
         buffer[0] = "0";
         buffer[1] = "x";
@@ -1356,7 +1495,10 @@ library Strings {
     /**
      * @dev Returns true if the two strings are equal.
      */
-    function equal(string memory a, string memory b) internal pure returns (bool) {
+    function equal(
+        string memory a,
+        string memory b
+    ) internal pure returns (bool) {
         return keccak256(bytes(a)) == keccak256(bytes(b));
     }
 }
@@ -1456,7 +1598,9 @@ contract ERC20 is Context, IERC20, IERC20Metadata {
     /**
      * @dev See {IERC20-balanceOf}.
      */
-    function balanceOf(address account) public view virtual override returns (uint256) {
+    function balanceOf(
+        address account
+    ) public view virtual override returns (uint256) {
         return _balances[account];
     }
 
@@ -1468,7 +1612,10 @@ contract ERC20 is Context, IERC20, IERC20Metadata {
      * - `to` cannot be the zero address.
      * - the caller must have a balance of at least `amount`.
      */
-    function transfer(address to, uint256 amount) public virtual override returns (bool) {
+    function transfer(
+        address to,
+        uint256 amount
+    ) public virtual override returns (bool) {
         address owner = _msgSender();
         _transfer(owner, to, amount);
         return true;
@@ -1477,7 +1624,10 @@ contract ERC20 is Context, IERC20, IERC20Metadata {
     /**
      * @dev See {IERC20-allowance}.
      */
-    function allowance(address owner, address spender) public view virtual override returns (uint256) {
+    function allowance(
+        address owner,
+        address spender
+    ) public view virtual override returns (uint256) {
         return _allowances[owner][spender];
     }
 
@@ -1491,7 +1641,10 @@ contract ERC20 is Context, IERC20, IERC20Metadata {
      *
      * - `spender` cannot be the zero address.
      */
-    function approve(address spender, uint256 amount) public virtual override returns (bool) {
+    function approve(
+        address spender,
+        uint256 amount
+    ) public virtual override returns (bool) {
         address owner = _msgSender();
         _approve(owner, spender, amount);
         return true;
@@ -1513,7 +1666,11 @@ contract ERC20 is Context, IERC20, IERC20Metadata {
      * - the caller must have allowance for ``from``'s tokens of at least
      * `amount`.
      */
-    function transferFrom(address from, address to, uint256 amount) public virtual override returns (bool) {
+    function transferFrom(
+        address from,
+        address to,
+        uint256 amount
+    ) public virtual override returns (bool) {
         address spender = _msgSender();
         _spendAllowance(from, spender, amount);
         _transfer(from, to, amount);
@@ -1532,7 +1689,10 @@ contract ERC20 is Context, IERC20, IERC20Metadata {
      *
      * - `spender` cannot be the zero address.
      */
-    function increaseAllowance(address spender, uint256 addedValue) public virtual returns (bool) {
+    function increaseAllowance(
+        address spender,
+        uint256 addedValue
+    ) public virtual returns (bool) {
         address owner = _msgSender();
         _approve(owner, spender, allowance(owner, spender) + addedValue);
         return true;
@@ -1552,10 +1712,16 @@ contract ERC20 is Context, IERC20, IERC20Metadata {
      * - `spender` must have allowance for the caller of at least
      * `subtractedValue`.
      */
-    function decreaseAllowance(address spender, uint256 subtractedValue) public virtual returns (bool) {
+    function decreaseAllowance(
+        address spender,
+        uint256 subtractedValue
+    ) public virtual returns (bool) {
         address owner = _msgSender();
         uint256 currentAllowance = allowance(owner, spender);
-        require(currentAllowance >= subtractedValue, "ERC20: decreased allowance below zero");
+        require(
+            currentAllowance >= subtractedValue,
+            "ERC20: decreased allowance below zero"
+        );
         unchecked {
             _approve(owner, spender, currentAllowance - subtractedValue);
         }
@@ -1577,14 +1743,21 @@ contract ERC20 is Context, IERC20, IERC20Metadata {
      * - `to` cannot be the zero address.
      * - `from` must have a balance of at least `amount`.
      */
-    function _transfer(address from, address to, uint256 amount) internal virtual {
+    function _transfer(
+        address from,
+        address to,
+        uint256 amount
+    ) internal virtual {
         require(from != address(0), "ERC20: transfer from the zero address");
         require(to != address(0), "ERC20: transfer to the zero address");
 
         _beforeTokenTransfer(from, to, amount);
 
         uint256 fromBalance = _balances[from];
-        require(fromBalance >= amount, "ERC20: transfer amount exceeds balance");
+        require(
+            fromBalance >= amount,
+            "ERC20: transfer amount exceeds balance"
+        );
         unchecked {
             _balances[from] = fromBalance - amount;
             // Overflow not possible: the sum of all balances is capped by totalSupply, and the sum is preserved by
@@ -1663,7 +1836,11 @@ contract ERC20 is Context, IERC20, IERC20Metadata {
      * - `owner` cannot be the zero address.
      * - `spender` cannot be the zero address.
      */
-    function _approve(address owner, address spender, uint256 amount) internal virtual {
+    function _approve(
+        address owner,
+        address spender,
+        uint256 amount
+    ) internal virtual {
         require(owner != address(0), "ERC20: approve from the zero address");
         require(spender != address(0), "ERC20: approve to the zero address");
 
@@ -1679,10 +1856,17 @@ contract ERC20 is Context, IERC20, IERC20Metadata {
      *
      * Might emit an {Approval} event.
      */
-    function _spendAllowance(address owner, address spender, uint256 amount) internal virtual {
+    function _spendAllowance(
+        address owner,
+        address spender,
+        uint256 amount
+    ) internal virtual {
         uint256 currentAllowance = allowance(owner, spender);
         if (currentAllowance != type(uint256).max) {
-            require(currentAllowance >= amount, "ERC20: insufficient allowance");
+            require(
+                currentAllowance >= amount,
+                "ERC20: insufficient allowance"
+            );
             unchecked {
                 _approve(owner, spender, currentAllowance - amount);
             }
@@ -1703,7 +1887,11 @@ contract ERC20 is Context, IERC20, IERC20Metadata {
      *
      * To learn more about hooks, head to xref:ROOT:extending-contracts.adoc#using-hooks[Using Hooks].
      */
-    function _beforeTokenTransfer(address from, address to, uint256 amount) internal virtual {}
+    function _beforeTokenTransfer(
+        address from,
+        address to,
+        uint256 amount
+    ) internal virtual {}
 
     /**
      * @dev Hook that is called after any transfer of tokens. This includes
@@ -1719,7 +1907,11 @@ contract ERC20 is Context, IERC20, IERC20Metadata {
      *
      * To learn more about hooks, head to xref:ROOT:extending-contracts.adoc#using-hooks[Using Hooks].
      */
-    function _afterTokenTransfer(address from, address to, uint256 amount) internal virtual {}
+    function _afterTokenTransfer(
+        address from,
+        address to,
+        uint256 amount
+    ) internal virtual {}
 }
 
 // lib/openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol
@@ -1743,15 +1935,26 @@ library SafeERC20 {
      * non-reverting calls are assumed to be successful.
      */
     function safeTransfer(IERC20 token, address to, uint256 value) internal {
-        _callOptionalReturn(token, abi.encodeWithSelector(token.transfer.selector, to, value));
+        _callOptionalReturn(
+            token,
+            abi.encodeWithSelector(token.transfer.selector, to, value)
+        );
     }
 
     /**
      * @dev Transfer `value` amount of `token` from `from` to `to`, spending the approval given by `from` to the
      * calling contract. If `token` returns no value, non-reverting calls are assumed to be successful.
      */
-    function safeTransferFrom(IERC20 token, address from, address to, uint256 value) internal {
-        _callOptionalReturn(token, abi.encodeWithSelector(token.transferFrom.selector, from, to, value));
+    function safeTransferFrom(
+        IERC20 token,
+        address from,
+        address to,
+        uint256 value
+    ) internal {
+        _callOptionalReturn(
+            token,
+            abi.encodeWithSelector(token.transferFrom.selector, from, to, value)
+        );
     }
 
     /**
@@ -1761,7 +1964,11 @@ library SafeERC20 {
      * Whenever possible, use {safeIncreaseAllowance} and
      * {safeDecreaseAllowance} instead.
      */
-    function safeApprove(IERC20 token, address spender, uint256 value) internal {
+    function safeApprove(
+        IERC20 token,
+        address spender,
+        uint256 value
+    ) internal {
         // safeApprove should only be called when setting an initial allowance,
         // or when resetting it to zero. To increase and decrease it, use
         // 'safeIncreaseAllowance' and 'safeDecreaseAllowance'
@@ -1769,27 +1976,55 @@ library SafeERC20 {
             (value == 0) || (token.allowance(address(this), spender) == 0),
             "SafeERC20: approve from non-zero to non-zero allowance"
         );
-        _callOptionalReturn(token, abi.encodeWithSelector(token.approve.selector, spender, value));
+        _callOptionalReturn(
+            token,
+            abi.encodeWithSelector(token.approve.selector, spender, value)
+        );
     }
 
     /**
      * @dev Increase the calling contract's allowance toward `spender` by `value`. If `token` returns no value,
      * non-reverting calls are assumed to be successful.
      */
-    function safeIncreaseAllowance(IERC20 token, address spender, uint256 value) internal {
+    function safeIncreaseAllowance(
+        IERC20 token,
+        address spender,
+        uint256 value
+    ) internal {
         uint256 oldAllowance = token.allowance(address(this), spender);
-        _callOptionalReturn(token, abi.encodeWithSelector(token.approve.selector, spender, oldAllowance + value));
+        _callOptionalReturn(
+            token,
+            abi.encodeWithSelector(
+                token.approve.selector,
+                spender,
+                oldAllowance + value
+            )
+        );
     }
 
     /**
      * @dev Decrease the calling contract's allowance toward `spender` by `value`. If `token` returns no value,
      * non-reverting calls are assumed to be successful.
      */
-    function safeDecreaseAllowance(IERC20 token, address spender, uint256 value) internal {
+    function safeDecreaseAllowance(
+        IERC20 token,
+        address spender,
+        uint256 value
+    ) internal {
         unchecked {
             uint256 oldAllowance = token.allowance(address(this), spender);
-            require(oldAllowance >= value, "SafeERC20: decreased allowance below zero");
-            _callOptionalReturn(token, abi.encodeWithSelector(token.approve.selector, spender, oldAllowance - value));
+            require(
+                oldAllowance >= value,
+                "SafeERC20: decreased allowance below zero"
+            );
+            _callOptionalReturn(
+                token,
+                abi.encodeWithSelector(
+                    token.approve.selector,
+                    spender,
+                    oldAllowance - value
+                )
+            );
         }
     }
 
@@ -1798,11 +2033,22 @@ library SafeERC20 {
      * non-reverting calls are assumed to be successful. Meant to be used with tokens that require the approval
      * to be set to zero before setting it to a non-zero value, such as USDT.
      */
-    function forceApprove(IERC20 token, address spender, uint256 value) internal {
-        bytes memory approvalCall = abi.encodeWithSelector(token.approve.selector, spender, value);
+    function forceApprove(
+        IERC20 token,
+        address spender,
+        uint256 value
+    ) internal {
+        bytes memory approvalCall = abi.encodeWithSelector(
+            token.approve.selector,
+            spender,
+            value
+        );
 
         if (!_callOptionalReturnBool(token, approvalCall)) {
-            _callOptionalReturn(token, abi.encodeWithSelector(token.approve.selector, spender, 0));
+            _callOptionalReturn(
+                token,
+                abi.encodeWithSelector(token.approve.selector, spender, 0)
+            );
             _callOptionalReturn(token, approvalCall);
         }
     }
@@ -1824,7 +2070,10 @@ library SafeERC20 {
         uint256 nonceBefore = token.nonces(owner);
         token.permit(owner, spender, value, deadline, v, r, s);
         uint256 nonceAfter = token.nonces(owner);
-        require(nonceAfter == nonceBefore + 1, "SafeERC20: permit did not succeed");
+        require(
+            nonceAfter == nonceBefore + 1,
+            "SafeERC20: permit did not succeed"
+        );
     }
 
     /**
@@ -1838,8 +2087,14 @@ library SafeERC20 {
         // we're implementing it ourselves. We use {Address-functionCall} to perform this call, which verifies that
         // the target address contains contract code and also asserts for success in the low-level call.
 
-        bytes memory returndata = address(token).functionCall(data, "SafeERC20: low-level call failed");
-        require(returndata.length == 0 || abi.decode(returndata, (bool)), "SafeERC20: ERC20 operation did not succeed");
+        bytes memory returndata = address(token).functionCall(
+            data,
+            "SafeERC20: low-level call failed"
+        );
+        require(
+            returndata.length == 0 || abi.decode(returndata, (bool)),
+            "SafeERC20: ERC20 operation did not succeed"
+        );
     }
 
     /**
@@ -1850,14 +2105,19 @@ library SafeERC20 {
      *
      * This is a variant of {_callOptionalReturn} that silents catches all reverts and returns a bool instead.
      */
-    function _callOptionalReturnBool(IERC20 token, bytes memory data) private returns (bool) {
+    function _callOptionalReturnBool(
+        IERC20 token,
+        bytes memory data
+    ) private returns (bool) {
         // We need to perform a low level call here, to bypass Solidity's return data size checking mechanism, since
         // we're implementing it ourselves. We cannot use {Address-functionCall} here since this should return false
         // and not revert is the subcall reverts.
 
         (bool success, bytes memory returndata) = address(token).call(data);
         return
-            success && (returndata.length == 0 || abi.decode(returndata, (bool))) && Address.isContract(address(token));
+            success &&
+            (returndata.length == 0 || abi.decode(returndata, (bool))) &&
+            Address.isContract(address(token));
     }
 }
 
@@ -1891,7 +2151,10 @@ abstract contract ERC20Capped is ERC20 {
      * @dev See {ERC20-_mint}.
      */
     function _mint(address account, uint256 amount) internal virtual override {
-        require(ERC20.totalSupply() + amount <= cap(), "ERC20Capped: cap exceeded");
+        require(
+            ERC20.totalSupply() + amount <= cap(),
+            "ERC20Capped: cap exceeded"
+        );
         super._mint(account, amount);
     }
 }
@@ -1967,14 +2230,21 @@ abstract contract AccessControl is Context, IAccessControl, ERC165 {
     /**
      * @dev See {IERC165-supportsInterface}.
      */
-    function supportsInterface(bytes4 interfaceId) public view virtual override returns (bool) {
-        return interfaceId == type(IAccessControl).interfaceId || super.supportsInterface(interfaceId);
+    function supportsInterface(
+        bytes4 interfaceId
+    ) public view virtual override returns (bool) {
+        return
+            interfaceId == type(IAccessControl).interfaceId ||
+            super.supportsInterface(interfaceId);
     }
 
     /**
      * @dev Returns `true` if `account` has been granted `role`.
      */
-    function hasRole(bytes32 role, address account) public view virtual override returns (bool) {
+    function hasRole(
+        bytes32 role,
+        address account
+    ) public view virtual override returns (bool) {
         return _roles[role].members[account];
     }
 
@@ -2018,7 +2288,9 @@ abstract contract AccessControl is Context, IAccessControl, ERC165 {
      *
      * To change a role's admin, use {_setRoleAdmin}.
      */
-    function getRoleAdmin(bytes32 role) public view virtual override returns (bytes32) {
+    function getRoleAdmin(
+        bytes32 role
+    ) public view virtual override returns (bytes32) {
         return _roles[role].adminRole;
     }
 
@@ -2034,7 +2306,10 @@ abstract contract AccessControl is Context, IAccessControl, ERC165 {
      *
      * May emit a {RoleGranted} event.
      */
-    function grantRole(bytes32 role, address account) public virtual override onlyRole(getRoleAdmin(role)) {
+    function grantRole(
+        bytes32 role,
+        address account
+    ) public virtual override onlyRole(getRoleAdmin(role)) {
         _grantRole(role, account);
     }
 
@@ -2049,7 +2324,10 @@ abstract contract AccessControl is Context, IAccessControl, ERC165 {
      *
      * May emit a {RoleRevoked} event.
      */
-    function revokeRole(bytes32 role, address account) public virtual override onlyRole(getRoleAdmin(role)) {
+    function revokeRole(
+        bytes32 role,
+        address account
+    ) public virtual override onlyRole(getRoleAdmin(role)) {
         _revokeRole(role, account);
     }
 
@@ -2069,8 +2347,14 @@ abstract contract AccessControl is Context, IAccessControl, ERC165 {
      *
      * May emit a {RoleRevoked} event.
      */
-    function renounceRole(bytes32 role, address account) public virtual override {
-        require(account == _msgSender(), "AccessControl: can only renounce roles for self");
+    function renounceRole(
+        bytes32 role,
+        address account
+    ) public virtual override {
+        require(
+            account == _msgSender(),
+            "AccessControl: can only renounce roles for self"
+        );
 
         _revokeRole(role, account);
     }
@@ -2296,7 +2580,7 @@ contract TokenPeg is AccessControl, IBridgeReceiver, ReentrancyGuard {
         uint256 refund = refunds[addr];
         require(refund > 0, "No refund available");
         delete refunds[addr];
-        token.transfer(addr, refund);
+        SafeERC20.safeTransfer(token, addr, refund);
         emit WithdrawnForFee(addr, refund, reimbursementFee);
     }
 
@@ -2308,7 +2592,7 @@ contract TokenPeg is AccessControl, IBridgeReceiver, ReentrancyGuard {
         require(recipient != address(0), "Invalid recipient address");
 
         fees = 0;
-        token.transfer(recipient, availableFees);
+        SafeERC20.safeTransfer(token, recipient, availableFees);
         emit AdminWithdrawal(recipient, availableFees);
     }
 
@@ -2467,7 +2751,7 @@ contract Token is AccessControl, ReentrancyGuard, ERC20Capped, Pausable {
         uint256 refund = refunds[addr];
         require(refund > 0, "No refund available");
         delete refunds[addr];
-        _transfer(address(this), addr, refund);
+        SafeERC20.safeTransfer(token, addr, refund);
         emit WithdrawnForFee(addr, refund, reimbursementFee);
     }
 
@@ -2479,8 +2763,7 @@ contract Token is AccessControl, ReentrancyGuard, ERC20Capped, Pausable {
         require(recipient != address(0), "Invalid recipient address");
 
         fees = 0;
-        _transfer(address(this), recipient, availableFees);
+        SafeERC20.safeTransfer(token, recipient, availableFees);
         emit AdminWithdrawal(recipient, availableFees);
     }
 }
-
