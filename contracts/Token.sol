@@ -6,6 +6,8 @@ import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Capped.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import "./ERC20Peg.sol";
 
 import "./Roles.sol";
@@ -18,7 +20,15 @@ string constant SYMBOL = "THINK";
 /**
  * @dev Futureverse ERC20 token
  */
-contract Token is AccessControl, ReentrancyGuard, ERC20Capped, Pausable {
+contract Token is
+    AccessControl,
+    ReentrancyGuard,
+    ERC20Capped,
+    ERC20Burnable,
+    Pausable
+{
+    using SafeERC20 for IERC20;
+
     bool private _initialized;
     address public peg;
 
@@ -57,15 +67,18 @@ contract Token is AccessControl, ReentrancyGuard, ERC20Capped, Pausable {
         return uint8(DECIMALS);
     }
 
-    function burn(uint256 _amount) external onlyRole(MULTISIG_ROLE) {
-        _burn(_msgSender(), _amount);
-    }
-
     function mint(
         address to,
         uint256 _amount
     ) external onlyRole(MULTISIG_ROLE) {
         _mint(to, _amount);
+    }
+
+    function _mint(
+        address to,
+        uint256 amount
+    ) internal override(ERC20, ERC20Capped) {
+        super._mint(to, amount);
     }
 
     function _beforeTokenTransfer(

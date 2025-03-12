@@ -70,22 +70,225 @@ contract TokenTest is Test {
     function test_burn_functionality() public {
         uint256 burnAmount = TEST_AMOUNT / 2;
 
-        vm.startPrank(multisig);
+        vm.startPrank(user);
         token.burn(burnAmount);
-        assertEq(token.balanceOf(multisig), (TEST_AMOUNT * 10) - burnAmount);
+        assertEq(token.balanceOf(user), TEST_AMOUNT - burnAmount);
         vm.stopPrank();
+    }
 
-        // Test unauthorized burn
-        vm.prank(user);
-        vm.expectRevert(
-            abi.encodePacked(
-                "AccessControl: account ",
-                Strings.toHexString(uint160(user), 20),
-                " is missing role ",
-                Strings.toHexString(uint256(MULTISIG_ROLE), 32)
-            )
+    function test_burn_zero_amount() public {
+        uint256 initialBalance = token.balanceOf(multisig);
+        uint256 initialSupply = token.totalSupply();
+
+        vm.prank(multisig);
+        token.burn(0);
+
+        assertEq(
+            token.balanceOf(multisig),
+            initialBalance,
+            "Balance should remain unchanged when burning 0 tokens"
         );
-        token.burn(100);
+        assertEq(
+            token.totalSupply(),
+            initialSupply,
+            "Total supply should remain unchanged when burning 0 tokens"
+        );
+    }
+
+    function test_burn_entire_balance() public {
+        uint256 initialBalance = token.balanceOf(multisig);
+        uint256 initialSupply = token.totalSupply();
+
+        vm.prank(multisig);
+        token.burn(initialBalance);
+
+        assertEq(
+            token.balanceOf(multisig),
+            0,
+            "Balance should be zero after burning entire balance"
+        );
+        assertEq(
+            token.totalSupply(),
+            initialSupply - initialBalance,
+            "Total supply should be reduced by burned amount"
+        );
+    }
+
+    function test_burn_more_than_balance() public {
+        uint256 initialBalance = token.balanceOf(multisig);
+
+        vm.prank(multisig);
+        vm.expectRevert("ERC20: burn amount exceeds balance");
+        token.burn(initialBalance + 1);
+
+        assertEq(
+            token.balanceOf(multisig),
+            initialBalance,
+            "Balance should remain unchanged after failed burn"
+        );
+    }
+
+    function test_burn_when_paused() public {
+        // Pause the token
+        vm.prank(tokenManager);
+        token.pause();
+
+        // Try to burn while paused
+        vm.prank(multisig);
+        vm.expectRevert("Pausable: paused");
+        token.burn(TEST_AMOUNT);
+    }
+
+    function test_burn_effect_on_total_supply() public {
+        uint256 initialSupply = token.totalSupply();
+        uint256 burnAmount = TEST_AMOUNT;
+
+        vm.prank(multisig);
+        token.burn(burnAmount);
+
+        assertEq(
+            token.totalSupply(),
+            initialSupply - burnAmount,
+            "Total supply should decrease by the burned amount"
+        );
+    }
+
+    function test_multiple_burns() public {
+        uint256 initialBalance = token.balanceOf(multisig);
+        uint256 initialSupply = token.totalSupply();
+        uint256 firstBurnAmount = TEST_AMOUNT / 4;
+        uint256 secondBurnAmount = TEST_AMOUNT / 2;
+
+        vm.startPrank(multisig);
+
+        token.burn(firstBurnAmount);
+        assertEq(
+            token.balanceOf(multisig),
+            initialBalance - firstBurnAmount,
+            "Balance should be reduced after first burn"
+        );
+        assertEq(
+            token.totalSupply(),
+            initialSupply - firstBurnAmount,
+            "Total supply should be reduced after first burn"
+        );
+
+        token.burn(secondBurnAmount);
+        assertEq(
+            token.balanceOf(multisig),
+            initialBalance - firstBurnAmount - secondBurnAmount,
+            "Balance should be reduced after second burn"
+        );
+        assertEq(
+            token.totalSupply(),
+            initialSupply - firstBurnAmount - secondBurnAmount,
+            "Total supply should be reduced after second burn"
+        );
+
+        vm.stopPrank();
+    }
+
+    function test_burnFrom_with_approval() public {
+        address burner = makeAddr("burner");
+        uint256 initialBalance = token.balanceOf(user);
+        uint256 initialSupply = token.totalSupply();
+        uint256 burnAmount = TEST_AMOUNT / 2;
+
+        // Grant MULTISIG_ROLE to the burner
+        vm.prank(rolesManager);
+        token.grantRole(MULTISIG_ROLE, burner);
+
+        // Approve burner to spend user's tokens
+        vm.prank(user);
+        token.approve(burner, burnAmount);
+
+        // Burn tokens from user's account
+        vm.prank(burner);
+        token.burnFrom(user, burnAmount);
+
+        assertEq(
+            token.balanceOf(user),
+            initialBalance - burnAmount,
+            "User balance should be reduced after burnFrom"
+        );
+        assertEq(
+            token.totalSupply(),
+            initialSupply - burnAmount,
+            "Total supply should be reduced after burnFrom"
+        );
+        assertEq(
+            token.allowance(user, burner),
+            0,
+            "Allowance should be consumed after burnFrom"
+        );
+    }
+
+    function test_burnFrom_without_approval() public {
+        address burner = makeAddr("burner");
+        uint256 burnAmount = TEST_AMOUNT / 2;
+
+        // Grant MULTISIG_ROLE to the burner
+        vm.prank(rolesManager);
+        token.grantRole(MULTISIG_ROLE, burner);
+
+        // Try to burn without approval
+        vm.prank(burner);
+        vm.expectRevert("ERC20: insufficient allowance");
+        token.burnFrom(user, burnAmount);
+    }
+
+    function test_burnFrom_partial_approval() public {
+        address burner = makeAddr("burner");
+        uint256 initialBalance = token.balanceOf(user);
+        uint256 approvalAmount = TEST_AMOUNT / 2;
+        uint256 burnAmount = TEST_AMOUNT;
+
+        // Grant MULTISIG_ROLE to the burner
+        vm.prank(rolesManager);
+        token.grantRole(MULTISIG_ROLE, burner);
+
+        // Approve burner to spend user's tokens
+        vm.prank(user);
+        token.approve(burner, approvalAmount);
+
+        // Try to burn more than approved
+        vm.prank(burner);
+        vm.expectRevert("ERC20: insufficient allowance");
+        token.burnFrom(user, burnAmount);
+
+        // Verify state remains unchanged
+        assertEq(
+            token.balanceOf(user),
+            initialBalance,
+            "User balance should remain unchanged after failed burnFrom"
+        );
+        assertEq(
+            token.allowance(user, burner),
+            approvalAmount,
+            "Allowance should remain unchanged after failed burnFrom"
+        );
+    }
+
+    function test_burnFrom_when_paused() public {
+        address burner = makeAddr("burner");
+        uint256 burnAmount = TEST_AMOUNT / 2;
+
+        // Grant MULTISIG_ROLE to the burner
+        vm.prank(rolesManager);
+        token.grantRole(MULTISIG_ROLE, burner);
+
+        // Approve burner to spend user's tokens
+        vm.prank(user);
+        token.approve(burner, burnAmount);
+
+        // Pause the token
+        vm.prank(tokenManager);
+        token.pause();
+
+        // Try to burn while paused
+        vm.prank(burner);
+        vm.expectRevert("Pausable: paused");
+        token.burnFrom(user, burnAmount);
     }
 
     function test_pause_mechanism() public {
