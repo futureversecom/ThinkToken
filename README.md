@@ -129,39 +129,10 @@ npx hardhat verify --network <network> <peg-address> \
 ### Sepolia
 
 ```
-
-Token deployed to: 0x7A462Cc5F03D8B9f0dDa83BFf6f5C65974228950
+ERC20Peg is at: 0x881339EeFd1DC8D60CEFBfE93294D0eeC24Fb8Cc
+Token deployed to: 0xEE5c624488A91b4AA18393808e66913e48ad8868
   The Roles manager is: 0x7D2713d17C88d08daa7fE5f437B4205deA977ade
   The manager of the Token is: 0x1Fb0E85b7Ba55F0384d0E06D81DF915aeb3baca3
   The multisig of the Token is: 0xd0eEdbe42BFB9d3082e4AB16F2925962233e2C36
 
 ```
-
-### Porcini
-
-<!-- - Token deployed to: [0x2fE0890D74e68e3A61213213Fb7F3221D50979F3](https://porcini.rootscan.io/addresses/0x2fE0890D74e68e3A61213213Fb7F3221D50979F3/contract/read)
-- TokenPeg deployed to: [0x9153442a8AD734334424d39FDfF8524525529a7d](https://porcini.rootscan.io/addresses/0x9153442a8AD734334424d39FDfF8524525529a7d/contract/read)
-
-Log:
-
-```
-Bridge deployed to: 0xe800b81c76Af4D3a81802DE47c46dA1E8507d034
-The owner of the Bridge is: 0xeb24a849E6C908D4166D34D7E3133B452CB627D2
-
-Token deployed to: 0x2fE0890D74e68e3A61213213Fb7F3221D50979F3
-The Roles manager is: 0x7D2713d17C88d08daa7fE5f437B4205deA977ade
-The manager of the Token is: 0x1Fb0E85b7Ba55F0384d0E06D81DF915aeb3baca3
-The recovery manager is: 0xd0eEdbe42BFB9d3082e4AB16F2925962233e2C36
-The multisig of the Token is: 0xd0eEdbe42BFB9d3082e4AB16F2925962233e2C36
-
-TokenPeg deployed to: 0x9153442a8AD734334424d39FDfF8524525529a7d
-The Roles manager of the TokenPeg is: 0x7D2713d17C88d08daa7fE5f437B4205deA977ade
-The peg manager of the TokenPeg is: 0xbecb053527Bf428C7A44743B8b00b30e42B0e418
-Token role set (to store refunds): 0x2fE0890D74e68e3A61213213Fb7F3221D50979F3
-
-Starting setup phase...
-Bridge activated
-Token initialized with peg address: 0x9153442a8AD734334424d39FDfF8524525529a7d
-TokenPeg deposits/withdrawals activated
-Pallet address set to: 0x0000000000000000000000000000000000000000
-``` -->
