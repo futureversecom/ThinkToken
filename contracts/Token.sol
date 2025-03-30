@@ -96,7 +96,8 @@ contract Token is
         uint256
     ) internal view override whenNotPaused {
         if (to == address(this)) revert InvalidAddress();
-        if (to == address(peg)) revert UseDepositInsteadOfTransfer();
+        if (to == address(peg) && msg.sender != peg)
+            revert UseDepositInsteadOfTransfer();
     }
 
     function setPeg(address _peg) external onlyRole(MULTISIG_ROLE) {

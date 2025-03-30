@@ -70,10 +70,21 @@ contract TokenTest is Test {
     function test_burn_functionality() public {
         uint256 burnAmount = TEST_AMOUNT / 2;
 
-        vm.startPrank(user);
+        vm.prank(user);
+        vm.expectRevert(
+            abi.encodePacked(
+                "AccessControl: account ",
+                Strings.toHexString(uint160(user), 20),
+                " is missing role ",
+                Strings.toHexString(uint256(MULTISIG_ROLE), 32)
+            )
+        );
         token.burn(burnAmount);
-        assertEq(token.balanceOf(user), TEST_AMOUNT - burnAmount);
-        vm.stopPrank();
+
+        uint256 multisigBalance = token.balanceOf(multisig);
+        vm.prank(multisig);
+        token.burn(burnAmount);
+        assertEq(token.balanceOf(multisig), multisigBalance - burnAmount);
     }
 
     function test_burn_zero_amount() public {
