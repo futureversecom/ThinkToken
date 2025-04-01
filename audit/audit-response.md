@@ -120,7 +120,8 @@ This document addresses the security findings from Red4Sec's audit report dated 
 
 1. **Short-term** (Q2 2025):
 
-   - Deploy the token contract
+   - [x]Deploy the token contract on Sepolia [THINK](https://sepolia.etherscan.io/address/0x6e0b07E7A1B550D83E2f11C98Cf1E15fe2b8d47B#code)
+   - [ ]Deploy the token contract on Ethereum []()
 
 2. **Medium-term** (Q3 2025):
 
