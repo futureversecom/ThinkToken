@@ -36,11 +36,20 @@ contract Token is
     error AlreadyInitialized();
     error UseDepositInsteadOfTransfer();
 
+    event PegChanged(address peg);
+
     constructor(
         address rolesManager,
         address tokenManager,
         address multisig
     ) ERC20Capped(TOTAL_SUPPLY) ERC20(NAME, SYMBOL) {
+        if (
+            rolesManager == address(0) ||
+            tokenManager == address(0) ||
+            multisig == address(0)
+        ) {
+            revert InvalidAddress();
+        }
         _grantRole(DEFAULT_ADMIN_ROLE, rolesManager);
         _grantRole(MANAGER_ROLE, tokenManager);
         _grantRole(MULTISIG_ROLE, multisig);
@@ -86,26 +95,17 @@ contract Token is
         address to,
         uint256
     ) internal view override whenNotPaused {
-        if (to == address(this)) {
-            revert InvalidAddress();
-        }
-        if (to == address(peg)) {
-            // check if the caller is a contract, and not a user
-            uint256 size;
-            assembly {
-                size := extcodesize(caller())
-            }
-            if (size == 0) {
-                revert UseDepositInsteadOfTransfer();
-            }
-        }
+        if (to == address(this)) revert InvalidAddress();
+        if (to == address(peg) && msg.sender != peg)
+            revert UseDepositInsteadOfTransfer();
     }
 
-    function setPeg(address _peg) external onlyRole(MANAGER_ROLE) {
+    function setPeg(address _peg) external onlyRole(MULTISIG_ROLE) {
         if (_peg == address(0)) {
             revert InvalidAddress();
         }
         peg = address(_peg);
+        emit PegChanged(_peg);
     }
 
     function pause() external onlyRole(MANAGER_ROLE) {
@@ -114,5 +114,9 @@ contract Token is
 
     function unpause() external onlyRole(MULTISIG_ROLE) {
         _unpause();
+    }
+
+    function burn(uint256 amount) public override onlyRole(MULTISIG_ROLE) {
+        _burn(msg.sender, amount);
     }
 }

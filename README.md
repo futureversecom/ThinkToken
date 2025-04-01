@@ -130,7 +130,7 @@ npx hardhat verify --network <network> <peg-address> \
 
 ```
 ERC20Peg is at: 0x881339EeFd1DC8D60CEFBfE93294D0eeC24Fb8Cc
-Token deployed to: 0xEE5c624488A91b4AA18393808e66913e48ad8868
+Token deployed to: 0x6e0b07E7A1B550D83E2f11C98Cf1E15fe2b8d47B
   The Roles manager is: 0x7D2713d17C88d08daa7fE5f437B4205deA977ade
   The manager of the Token is: 0x1Fb0E85b7Ba55F0384d0E06D81DF915aeb3baca3
   The multisig of the Token is: 0xd0eEdbe42BFB9d3082e4AB16F2925962233e2C36
